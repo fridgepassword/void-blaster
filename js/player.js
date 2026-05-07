@@ -93,7 +93,7 @@ class Player {
       if (isKeyDown('KeyS', 'ArrowDown', 's')) dy += 1;
       if (isKeyDown('KeyA', 'ArrowLeft', 'a')) dx -= 1;
       if (isKeyDown('KeyD', 'ArrowRight', 'd')) dx += 1;
-      aimAngle = angleBetween(this.x, this.y, mouse.x, mouse.y);
+      aimAngle = this._findAimAngle();
     } else if (mode === 'mouse') {
       // Player follows mouse — smooth arrival, no abrupt stop
       const dxm = mouse.x - this.x;
@@ -201,11 +201,9 @@ class Player {
       }
     }
 
-    // Auto-fire — always shooting at the current aim angle
+    // Auto-fire — always shooting at the auto-aimed angle, only when there's a target.
     if (this.fireTimer <= 0) {
-      // In mouse / touch modes, only fire if there's a valid target nearby (no wasted shots)
-      // In WASD mode, always fire toward the cursor
-      if (mode === 'wasd' || this._hasTarget()) {
+      if (this._hasTarget()) {
         this.shoot(bullets);
         let fr = this.fireRate;
         if (this.adrenaline && this.hp < this.maxHp * 0.3) fr *= 1.35;

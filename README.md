@@ -18,9 +18,11 @@ Pick a control mode on the title screen:
 
 | Mode | Move | Aim & fire |
 | --- | --- | --- |
-| **Keyboard** | WASD / Arrows | Mouse aims, auto-fires |
-| **Mouse follow** | Ship chases the cursor | Auto-aims at nearest enemy |
-| **Touch** (phones) | Drag a finger | Auto-aims at nearest enemy |
+| **Keyboard** | WASD / Arrows | Auto-aim & auto-fire at nearest enemy |
+| **Mouse follow** | Ship chases the cursor | Auto-aim & auto-fire at nearest enemy |
+| **Touch** (phones) | Drag a finger | Auto-aim & auto-fire at nearest enemy |
+
+All you do is dodge — the ship handles aiming and shooting in every mode.
 
 Other keys: **Shift** dash (after upgrade), **P / Esc** pause, **M** mute, **1 / 2 / 3** pick upgrade card, **mouse wheel / drag** scroll the shop.
 

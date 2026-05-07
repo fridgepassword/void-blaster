@@ -8,7 +8,7 @@ let shopContinueRect = null;
 function pf() { return (window.__phoneFactor && window.__phoneFactor()) || 1; }
 
 const CONTROL_LABELS = {
-  wasd:  { name: 'KEYBOARD',     hint: 'WASD / ARROWS — MOVE   ·   MOUSE — AIM   ·   AUTO-FIRE' },
+  wasd:  { name: 'KEYBOARD',     hint: 'WASD / ARROWS — MOVE   ·   AUTO-AIM AND AUTO-FIRE' },
   mouse: { name: 'MOUSE FOLLOW', hint: 'MOVE MOUSE — SHIP FOLLOWS   ·   AUTO-AIM AND AUTO-FIRE' },
   touch: { name: 'TOUCH',        hint: 'TAP & DRAG TO MOVE   ·   AUTO-AIM AND AUTO-FIRE' },
 };
