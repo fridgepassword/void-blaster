@@ -1,14 +1,15 @@
 // ===== Enemy types =====
 class Enemy {
   constructor(x, y, opts = {}) {
+    const pf = (window.__phoneFactor && window.__phoneFactor()) || 1;
     this.x = x;
     this.y = y;
     this.vx = 0;
     this.vy = 0;
     this.maxHp = opts.hp ?? 20;
     this.hp = this.maxHp;
-    this.radius = opts.radius ?? 14;
-    this.speed = opts.speed ?? 90;
+    this.radius = (opts.radius ?? 14) * pf;
+    this.speed = (opts.speed ?? 90) * Math.sqrt(pf);  // matches player speed scaling
     this.damage = opts.damage ?? 12;
     this.color = opts.color ?? '#ff4444';
     this.outline = opts.outline ?? '#ffffff';

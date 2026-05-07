@@ -6,19 +6,28 @@ let W = 0, H = 0;
 let renderScale = 1; // physical-pixels-per-world-unit (excluding DPR)
 let player = null;   // declared early so resize() can safely reference it
 
-// Reference shorter dimension for "1× zoom" — content sized for ~500px-min worlds.
-// Big screens scale up proportionally so the ship/HUD don't look like ants at desktop sizes.
-// Small phones use 1× (no down-scaling) to keep the play area roomy.
-const REFERENCE_MIN_DIM = 500;
-const MAX_RENDER_SCALE = 2.2;
+// Render scaling — target a "comfy" world size and zoom in/out to fit.
+// On phones, the world is BIGGER than the screen (gives breathing room to dodge),
+// and entities/HUD get a separate phone boost so they stay visible.
+const TARGET_MIN_WORLD = 620;     // world short-side aim — bigger = more room
+const MIN_RENDER_SCALE = 0.55;    // smallest phones can't zoom out further
+const MAX_RENDER_SCALE = 2.2;     // 4K caps here so things don't get absurd
+
+let phoneFactor = 1;              // entity / HUD size multiplier (>1 on phones)
 
 function resize() {
   const physW = window.innerWidth;
   const physH = window.innerHeight;
   const minPhys = Math.min(physW, physH);
 
-  // Scale up only when the screen is bigger than reference; cap so 4K+ stays sane.
-  renderScale = Math.min(Math.max(1, minPhys / REFERENCE_MIN_DIM), MAX_RENDER_SCALE);
+  // Single continuous formula: try to give every screen ~TARGET_MIN_WORLD world units
+  // on its shorter dimension. Phones get scale < 1 (zoomed out, more room),
+  // desktops get scale > 1 (entities pleasantly large).
+  renderScale = clamp(minPhys / TARGET_MIN_WORLD, MIN_RENDER_SCALE, MAX_RENDER_SCALE);
+
+  // Phone boost — on small / zoomed-out screens, render entities bigger in world units
+  // so they're still visible after the world scaling. Desktops get 1×.
+  phoneFactor = renderScale < 0.85 ? clamp(1.4 / renderScale * 0.7, 1.2, 1.8) : 1;
 
   // World (logical) size — what gameplay code uses for positions.
   W = physW / renderScale;
@@ -42,8 +51,9 @@ function resize() {
   }
 }
 
-// Expose for input conversion
+// Expose for input conversion + phone-sensitive sizing
 window.__renderScale = () => renderScale;
+window.__phoneFactor = () => phoneFactor;
 
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 100));
@@ -602,18 +612,20 @@ function render() {
   // Screen flash on top of everything
   drawFlash(ctx, W, H);
 
-  // Custom cursor — always draw
-  let isHover = false;
-  if (state === STATE.UPGRADE) {
-    for (const r of upgradeButtonRects) {
-      if (mouse.x >= r.x && mouse.x <= r.x + r.w &&
-          mouse.y >= r.y - 12 && mouse.y <= r.y + r.h) {
-        isHover = true;
-        break;
+  // Custom cursor — only when there is one (skip touch mode)
+  if (settings.controlMode !== 'touch') {
+    let isHover = false;
+    if (state === STATE.UPGRADE) {
+      for (const r of upgradeButtonRects) {
+        if (mouse.x >= r.x && mouse.x <= r.x + r.w &&
+            mouse.y >= r.y - 12 && mouse.y <= r.y + r.h) {
+          isHover = true;
+          break;
+        }
       }
     }
+    drawCrosshair(ctx, mouse.x, mouse.y, totalTime, isHover);
   }
-  drawCrosshair(ctx, mouse.x, mouse.y, totalTime, isHover);
 }
 
 requestAnimationFrame(loop);

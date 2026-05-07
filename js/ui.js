@@ -4,6 +4,9 @@ const settingsButtonRects = [];
 const shopItemRects = [];
 let shopContinueRect = null;
 
+// Read phone factor from game.js — boosts UI sizes on small / zoomed-out screens
+function pf() { return (window.__phoneFactor && window.__phoneFactor()) || 1; }
+
 const CONTROL_LABELS = {
   wasd:  { name: 'KEYBOARD',     hint: 'WASD / ARROWS — MOVE   ·   MOUSE — AIM   ·   AUTO-FIRE' },
   mouse: { name: 'MOUSE FOLLOW', hint: 'MOVE MOUSE — SHIP FOLLOWS   ·   AUTO-AIM AND AUTO-FIRE' },
@@ -152,13 +155,14 @@ function drawTitleScreen(ctx, w, h, time) {
 }
 
 function drawHUD(ctx, w, h, player, wave, score, kills, combo, comboTimer, boss, credits) {
+  const k = pf();
   ctx.save();
   ctx.textBaseline = 'top';
 
   // ===== HP bar (top left) — width scales with screen, with reasonable bounds =====
-  const hpX = 16, hpY = 16;
-  const hpW = clamp(w * 0.32, 160, 320);
-  const hpH = 24;
+  const hpX = 16 * k, hpY = 16 * k;
+  const hpW = clamp(w * 0.32, 160 * k, 320 * k);
+  const hpH = 24 * k;
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fillRect(hpX - 3, hpY - 3, hpW + 6, hpH + 6);
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
@@ -174,33 +178,33 @@ function drawHUD(ctx, w, h, player, wave, score, kills, combo, comboTimer, boss,
   ctx.lineWidth = 2;
   ctx.strokeRect(hpX, hpY, hpW, hpH);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px "Courier New", monospace';
+  ctx.font = `bold ${Math.round(14 * k)}px "Courier New", monospace`;
   ctx.textAlign = 'left';
-  ctx.fillText(`HP  ${Math.ceil(player.hp)} / ${player.maxHp}`, hpX + 8, hpY + 6);
+  ctx.fillText(`HP  ${Math.ceil(player.hp)} / ${player.maxHp}`, hpX + 8 * k, hpY + 6 * k);
 
   // ===== Score, wave, kills (top right) =====
   ctx.textAlign = 'right';
   ctx.shadowBlur = 8;
   ctx.shadowColor = '#88ddff';
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 22px "Courier New", monospace';
-  ctx.fillText(`WAVE ${wave}`, w - 16, 14);
+  ctx.font = `bold ${Math.round(22 * k)}px "Courier New", monospace`;
+  ctx.fillText(`WAVE ${wave}`, w - 16 * k, 14 * k);
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#ffaa44';
-  ctx.font = 'bold 16px "Courier New", monospace';
-  ctx.fillText(`${score.toLocaleString()}`, w - 16, 42);
+  ctx.font = `bold ${Math.round(16 * k)}px "Courier New", monospace`;
+  ctx.fillText(`${score.toLocaleString()}`, w - 16 * k, (14 + 28) * k);
   ctx.fillStyle = '#aaaaaa';
-  ctx.font = '12px "Courier New", monospace';
-  ctx.fillText(`${kills} KILLS`, w - 16, 64);
+  ctx.font = `${Math.round(12 * k)}px "Courier New", monospace`;
+  ctx.fillText(`${kills} KILLS`, w - 16 * k, (14 + 28 + 22) * k);
 
-  // Credits — under HP bar (top-left area)
+  // Credits — under HP bar
   if (typeof credits === 'number') {
     ctx.shadowBlur = 8;
     ctx.shadowColor = '#ffaa00';
     ctx.fillStyle = '#ffdd44';
-    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.font = `bold ${Math.round(16 * k)}px "Courier New", monospace`;
     ctx.textAlign = 'left';
-    ctx.fillText(`$ ${credits}`, hpX, hpY + hpH + 6);
+    ctx.fillText(`$ ${credits}`, hpX, hpY + hpH + 6 * k);
     ctx.shadowBlur = 0;
   }
 
@@ -210,27 +214,26 @@ function drawHUD(ctx, w, h, player, wave, score, kills, combo, comboTimer, boss,
     ctx.shadowBlur = 12;
     ctx.shadowColor = '#ff66ff';
     ctx.fillStyle = combo >= 20 ? '#ff66ff' : combo >= 10 ? '#ffff66' : '#ffaa44';
-    ctx.font = 'bold 20px "Courier New", monospace';
-    ctx.fillText(`x${combo} COMBO`, w - 16, 86);
-    // tiny timer bar
+    ctx.font = `bold ${Math.round(20 * k)}px "Courier New", monospace`;
+    ctx.fillText(`x${combo} COMBO`, w - 16 * k, (14 + 28 + 22 + 22) * k);
     ctx.shadowBlur = 0;
-    const cbW = 90;
-    const cbX = w - 16 - cbW;
-    const cbY = 112;
+    const cbW = 90 * k;
+    const cbX = w - 16 * k - cbW;
+    const cbY = (14 + 28 + 22 + 22 + 26) * k;
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(cbX, cbY, cbW, 3);
+    ctx.fillRect(cbX, cbY, cbW, 3 * k);
     ctx.fillStyle = '#ffaa44';
-    ctx.fillRect(cbX, cbY, cbW * (comboTimer / 2.5), 3);
+    ctx.fillRect(cbX, cbY, cbW * (comboTimer / 2.5), 3 * k);
   }
 
   // ===== Dash cooldown (bottom-left) =====
   if (player.canDash) {
-    const dx = 20, dy = h - 50, dw = 110, dh = 8;
+    const dx = 20 * k, dy = h - 50 * k, dw = 110 * k, dh = 8 * k;
     ctx.textAlign = 'left';
     ctx.fillStyle = '#ffffff';
     ctx.shadowBlur = 0;
-    ctx.font = '12px "Courier New", monospace';
-    ctx.fillText('DASH (SHIFT)', dx, dy - 16);
+    ctx.font = `${Math.round(12 * k)}px "Courier New", monospace`;
+    ctx.fillText('DASH (SHIFT)', dx, dy - 16 * k);
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(dx, dy, dw, dh);
     const ratio = 1 - clamp(player.dashCooldown / player.dashCooldownMax, 0, 1);
@@ -245,17 +248,17 @@ function drawHUD(ctx, w, h, player, wave, score, kills, combo, comboTimer, boss,
 
   // ===== Boss bar (below top HUD, centered) =====
   if (boss) {
-    const bw = Math.min(640, w - 80);
-    const bh = 18;
+    const bw = Math.min(640 * k, w - 80 * k);
+    const bh = 18 * k;
     const bx = (w - bw) / 2;
-    const by = 70;
+    const by = (14 + 28 + 22 + 22 + 26 + 22) * k; // below combo indicator
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#ffffff';
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ff66ff';
-    ctx.font = 'bold 16px "Courier New", monospace';
-    ctx.fillText(`◆  B O S S  —  LV ${boss.level}  ◆`, w / 2, by - 22);
+    ctx.font = `bold ${Math.round(16 * k)}px "Courier New", monospace`;
+    ctx.fillText(`◆  B O S S  —  LV ${boss.level}  ◆`, w / 2, by - 22 * k);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(bx - 3, by - 3, bw + 6, bh + 6);
@@ -272,7 +275,7 @@ function drawHUD(ctx, w, h, player, wave, score, kills, combo, comboTimer, boss,
   }
 
   // ===== Stats panel (bottom right) — only on roomy screens =====
-  if (w > 520 && h > 480) {
+  if (w > 520 && h > 480 && k <= 1.05) {  // hide on phones (where k > 1.2) — UI gets cramped
     const sx = w - 16, sy = h - 90;
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(170, 200, 240, 0.55)';

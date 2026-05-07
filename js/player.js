@@ -1,21 +1,22 @@
 // ===== Player ship =====
 class Player {
   constructor(x, y) {
+    const pf = (window.__phoneFactor && window.__phoneFactor()) || 1;
     this.x = x;
     this.y = y;
     this.vx = 0;
     this.vy = 0;
     this.ang = -Math.PI / 2;
-    this.radius = 14;
+    this.radius = 14 * pf;
 
     // Stats — modified by upgrades
     this.maxHp = 100;
     this.hp = 100;
-    this.speed = 280;
+    this.speed = 280 * Math.sqrt(pf);   // bigger world = travel slightly faster
     this.damage = 12;
     this.fireRate = 4;          // shots/sec
-    this.bulletSpeed = 700;
-    this.bulletSize = 4;
+    this.bulletSpeed = 700 * Math.sqrt(pf);
+    this.bulletSize = 4 * pf;
     this.pierce = 0;
     this.multishot = 1;
     this.spread = 0;
