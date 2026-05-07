@@ -1,0 +1,16 @@
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Claude Code workspace config (preview server, local launch settings)
+.claude/
+
+# Node / build artifacts (none currently, but in case)
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
