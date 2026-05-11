@@ -103,8 +103,37 @@ window.__highScore = parseInt(localStorage.getItem('voidblaster_hiscore') || '0'
 
 // ===== Settings (persisted) =====
 const CONTROL_MODES = ['wasd', 'mouse', 'touch'];
+const DIFFICULTIES = {
+  easy: {
+    name: 'EASY',  color: '#88ff88',
+    desc: 'For learning the ropes',
+    enemyHpMult: 0.8,  enemyDmgMult: 0.75,
+    playerDmgTakenMult: 0.8, waveBudgetMult: 0.85, scoreMult: 0.8,
+  },
+  normal: {
+    name: 'NORMAL', color: '#88ccff',
+    desc: 'The intended challenge',
+    enemyHpMult: 1.0,  enemyDmgMult: 1.0,
+    playerDmgTakenMult: 1.0, waveBudgetMult: 1.0, scoreMult: 1.0,
+  },
+  hard: {
+    name: 'HARD',  color: '#ff8844',
+    desc: 'Expect to die',
+    enemyHpMult: 1.3,  enemyDmgMult: 1.25,
+    playerDmgTakenMult: 1.2, waveBudgetMult: 1.15, scoreMult: 1.35,
+  },
+  brutal: {
+    name: 'BRUTAL', color: '#ff3344',
+    desc: 'For masochists',
+    enemyHpMult: 1.6,  enemyDmgMult: 1.55,
+    playerDmgTakenMult: 1.5, waveBudgetMult: 1.3, scoreMult: 1.8,
+  },
+};
+const DIFFICULTY_KEYS = Object.keys(DIFFICULTIES);
+
 const settings = {
   controlMode: 'wasd',
+  difficulty: 'normal',
 };
 function loadSettings() {
   const m = localStorage.getItem('voidblaster_control');
@@ -113,12 +142,18 @@ function loadSettings() {
   if (!m && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
     settings.controlMode = 'touch';
   }
+  const d = localStorage.getItem('voidblaster_difficulty');
+  if (d && DIFFICULTIES[d]) settings.difficulty = d;
 }
 function saveSettings() {
-  try { localStorage.setItem('voidblaster_control', settings.controlMode); } catch (e) {}
+  try {
+    localStorage.setItem('voidblaster_control', settings.controlMode);
+    localStorage.setItem('voidblaster_difficulty', settings.difficulty);
+  } catch (e) {}
 }
 loadSettings();
 window.__settings = settings;
+window.__getDifficulty = () => DIFFICULTIES[settings.difficulty] || DIFFICULTIES.normal;
 
 function startGame() {
   player = new Player(W / 2, H / 2);
@@ -142,7 +177,8 @@ function startGame() {
 
 function startNextWave() {
   wave++;
-  waveSpec = generateWave(wave);
+  const diff = window.__getDifficulty();
+  waveSpec = generateWave(wave, diff);
   waveSpawnTimer = 0.4;
   waveActive = true;
   waveAnnounceTime = 0;
@@ -163,6 +199,19 @@ function endWave() {
 }
 
 function gameOver() {
+  // Phoenix — one revive per run
+  if (player && player.phoenix && !player.phoenixUsed) {
+    player.phoenixUsed = true;
+    player.hp = Math.max(1, player.maxHp * 0.5);
+    player.invincible = 2.5;
+    flash(255, 200, 80, 0.6, 1.5);
+    shake(20, 0.5);
+    explosion(player.x, player.y, '#ffaa44', 60, 450, 0.9);
+    explosion(player.x, player.y, '#ffffff', 30, 250, 0.5);
+    addFloatingText(player.x, player.y - 30, 'PHOENIX!', '#ffaa44', 28);
+    sfxUpgrade();
+    return;
+  }
   if (score > window.__highScore) {
     window.__highScore = score;
     localStorage.setItem('voidblaster_hiscore', String(score));
@@ -218,9 +267,17 @@ function update(dt) {
       if (wasKeyPressed('Space', 'Enter', ' ', 'enter')) {
         startGame();
       } else if (mouse.justClicked) {
-        const picked = pickControlMode(mouse.x, mouse.y);
-        if (picked) {
-          settings.controlMode = picked;
+        const pickedDiff = pickDifficulty(mouse.x, mouse.y);
+        if (pickedDiff) {
+          settings.difficulty = pickedDiff;
+          saveSettings();
+          sfxClick();
+          mouse.justClicked = false;
+          break;
+        }
+        const pickedMode = pickControlMode(mouse.x, mouse.y);
+        if (pickedMode) {
+          settings.controlMode = pickedMode;
           saveSettings();
           sfxClick();
           mouse.justClicked = false;
@@ -228,7 +285,7 @@ function update(dt) {
           startGame();
         }
       }
-      // Quick-cycle with Tab key
+      // Quick-cycle control with Tab
       if (wasKeyPressed('Tab', 'tab')) {
         const idx = CONTROL_MODES.indexOf(settings.controlMode);
         settings.controlMode = CONTROL_MODES[(idx + 1) % CONTROL_MODES.length];
@@ -307,7 +364,7 @@ function updatePlaying(dt) {
     waveSpawnTimer -= dt;
     if (waveSpec.length > 0 && waveSpawnTimer <= 0) {
       const next = waveSpec.shift();
-      enemies.push(spawnEnemyFromSpec(next, W, H));
+      enemies.push(spawnEnemyFromSpec(next, W, H, wave, window.__getDifficulty()));
       // Spawn cadence: tighter for swarmers, wider for big enemies
       if (next.type === 'swarmer') waveSpawnTimer = rand(0.2, 0.45);
       else if (next.type === 'tank' || next.type === 'bomber') waveSpawnTimer = rand(0.7, 1.1);
@@ -359,6 +416,23 @@ function updatePlaying(dt) {
           if (b.frost) e.applyFrost(1.5);
           if (b.burnDps > 0) e.applyBurn(b.burnDps, b.burnDuration);
 
+          // Doppler — first hit spawns 2 perpendicular clone bullets at half damage
+          if (b.doppler && !b.dopplerSpawned) {
+            b.dopplerSpawned = true;
+            const baseAng = Math.atan2(b.vy, b.vx);
+            const speed = Math.hypot(b.vx, b.vy);
+            for (const s of [-1, 1]) {
+              bullets.push(new Bullet(
+                b.x, b.y,
+                baseAng + s * Math.PI / 2,
+                speed,
+                b.damage * 0.5,
+                { size: b.size * 0.8, pierce: 0, isCrit: b.isCrit, life: 0.9 }
+              ));
+            }
+            spark(b.x, b.y, '#ff66ff', 6, 200);
+          }
+
           // Splash chain — damage one extra nearby enemy at 60% damage
           if (b.splashChain > 0) {
             let chained = 0;
@@ -389,10 +463,6 @@ function updatePlaying(dt) {
       if (e.contactCooldown <= 0 && distSq(e.x, e.y, player.x, player.y) < pr * pr) {
         if (player.takeDamage(e.damage)) {
           e.contactCooldown = 0.5;
-          // small bounce-back
-          const a = angleBetween(player.x, player.y, e.x, e.y);
-          e.knockX += Math.cos(a) * 250;
-          e.knockY += Math.sin(a) * 250;
         }
       }
     }
@@ -402,7 +472,8 @@ function updatePlaying(dt) {
       combo++;
       comboTimer = COMBO_WINDOW;
       const comboBonus = 1 + Math.min(2, combo * 0.04);
-      const scoreGain = Math.floor(e.scoreValue * player.scoreMult * comboBonus);
+      const diff = window.__getDifficulty();
+      const scoreGain = Math.floor(e.scoreValue * player.scoreMult * comboBonus * (diff?.scoreMult || 1));
       score += scoreGain;
       kills++;
 
@@ -418,6 +489,16 @@ function updatePlaying(dt) {
       if (e.type === 'boss') player.bossesDefeated++;
       if (player.killHeal > 0) {
         player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.killHeal);
+      }
+      // Endurance — heal every 8 kills per stack
+      if (player.endurance > 0) {
+        player.enduranceCount++;
+        if (player.enduranceCount >= 8) {
+          player.enduranceCount = 0;
+          const heal = 6 * player.endurance;
+          player.hp = Math.min(player.maxHp, player.hp + heal);
+          addFloatingText(player.x, player.y - 24, `+${heal}♥`, '#88ff88', 14);
+        }
       }
 
       enemies.splice(i, 1);

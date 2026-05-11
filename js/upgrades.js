@@ -1,41 +1,45 @@
-// ===== Upgrades — 22 options spanning common/uncommon/rare =====
+// ===== Upgrades — common / uncommon / rare / epic =====
+// Re-balanced and expanded. Some cards moved to Epic tier (4× weight rarer than rare),
+// strong combos pushed to once-only or boss-locked, and several new mechanics added.
 const UPGRADES = [
-  // ===== COMMON: small stat bumps, repeatable =====
+  // =============================================================
+  // COMMON  — small repeatable stat bumps (high frequency)
+  // =============================================================
   {
     id: 'damage', name: 'Damage Boost', icon: '⚔',
-    description: '+25% bullet damage',
+    description: '+22% bullet damage',
     rarity: 'common',
-    apply: (p) => { p.damage *= 1.25; },
+    apply: (p) => { p.damage *= 1.22; },
   },
   {
     id: 'firerate', name: 'Rapid Fire', icon: '⚡',
-    description: '+20% fire rate',
+    description: '+18% fire rate',
     rarity: 'common',
-    apply: (p) => { p.fireRate *= 1.2; },
+    apply: (p) => { p.fireRate *= 1.18; },
   },
   {
     id: 'speed', name: 'Swift Engines', icon: '»',
-    description: '+15% movement speed',
+    description: '+12% movement speed',
     rarity: 'common',
-    apply: (p) => { p.speed *= 1.15; },
+    apply: (p) => { p.speed *= 1.12; },
   },
   {
     id: 'hp', name: 'Reinforced Hull', icon: '+',
-    description: '+25 max HP, full heal',
+    description: '+20 max HP, full heal',
     rarity: 'common',
-    apply: (p) => { p.maxHp += 25; p.hp = p.maxHp; },
+    apply: (p) => { p.maxHp += 20; p.hp = p.maxHp; },
   },
   {
     id: 'bulletspeed', name: 'Velocity Tuning', icon: '→',
-    description: '+30% bullet speed',
+    description: '+25% bullet speed',
     rarity: 'common',
-    apply: (p) => { p.bulletSpeed *= 1.3; },
+    apply: (p) => { p.bulletSpeed *= 1.25; },
   },
   {
     id: 'bulletsize', name: 'Heavy Rounds', icon: '●',
-    description: '+25% bullet size',
+    description: '+20% bullet size',
     rarity: 'common',
-    apply: (p) => { p.bulletSize *= 1.25; },
+    apply: (p) => { p.bulletSize *= 1.20; },
   },
   {
     id: 'heal', name: 'Repair Kit', icon: '♥',
@@ -43,8 +47,22 @@ const UPGRADES = [
     rarity: 'common',
     apply: (p) => { p.hp = p.maxHp; },
   },
+  {
+    id: 'targeting', name: 'Targeting', icon: '◉',
+    description: '+5% crit chance',
+    rarity: 'common',
+    apply: (p) => { p.critChance += 0.05; },
+  },
+  {
+    id: 'range', name: 'Range Extender', icon: '⤳',
+    description: '+15% bullet range',
+    rarity: 'common',
+    apply: (p) => { p.bulletLifeMult = (p.bulletLifeMult || 1) * 1.15; },
+  },
 
-  // ===== UNCOMMON =====
+  // =============================================================
+  // UNCOMMON  — bigger or conditional bonuses
+  // =============================================================
   {
     id: 'pierce', name: 'Piercing Rounds', icon: '↦',
     description: 'Bullets pierce 1 more enemy',
@@ -53,15 +71,15 @@ const UPGRADES = [
   },
   {
     id: 'crit', name: 'Critical Strike', icon: '✦',
-    description: '+12% crit chance',
+    description: '+10% crit chance',
     rarity: 'uncommon',
-    apply: (p) => { p.critChance += 0.12; },
+    apply: (p) => { p.critChance += 0.10; },
   },
   {
     id: 'lifesteal', name: 'Vampiric Rounds', icon: '♢',
-    description: '+5% lifesteal',
+    description: '+4% lifesteal',
     rarity: 'uncommon',
-    apply: (p) => { p.lifesteal += 0.05; },
+    apply: (p) => { p.lifesteal += 0.04; },
   },
   {
     id: 'regen', name: 'Regeneration', icon: '↻',
@@ -77,9 +95,9 @@ const UPGRADES = [
   },
   {
     id: 'score', name: 'Profit Margin', icon: '$',
-    description: '+25% score per kill',
+    description: '+22% score per kill',
     rarity: 'uncommon',
-    apply: (p) => { p.scoreMult *= 1.25; },
+    apply: (p) => { p.scoreMult *= 1.22; },
   },
   {
     id: 'dashcd', name: 'Coolant Boost', icon: '⏱',
@@ -95,23 +113,73 @@ const UPGRADES = [
     requires: (p) => p.maxShield > 0,
     apply: (p) => { p.shieldRecharge *= 0.75; },
   },
+  {
+    id: 'movers_edge', name: "Mover's Edge", icon: '↗',
+    description: '+18% damage while moving',
+    rarity: 'uncommon',
+    apply: (p) => { p.moversEdge += 0.18; },
+  },
+  {
+    id: 'iron_will', name: 'Iron Will', icon: '⛨',
+    description: '+50% i-frame duration after a hit',
+    rarity: 'uncommon',
+    apply: (p) => { p.iframeMult *= 1.5; },
+    once: true,
+  },
+  {
+    id: 'adrenaline', name: 'Adrenaline', icon: '!',
+    description: 'At low HP (<30%), +30% fire rate',
+    rarity: 'uncommon',
+    once: true,
+    apply: (p) => { p.adrenaline = true; },
+  },
+  {
+    id: 'kill_heal', name: 'Salvage Drone', icon: '⚙',
+    description: 'Heal 2.5% max HP on kill',
+    rarity: 'uncommon',
+    apply: (p) => { p.killHeal += 0.025; },
+  },
+  {
+    id: 'steady_aim', name: 'Steady Aim', icon: '◈',
+    description: 'First shot in a volley deals +40%',
+    rarity: 'uncommon',
+    once: true,
+    apply: (p) => { p.steadyAim = true; },
+  },
+  {
+    id: 'endurance', name: 'Endurance', icon: '✚',
+    description: 'Heal 6 HP every 8 kills',
+    rarity: 'uncommon',
+    apply: (p) => { p.endurance = (p.endurance || 0) + 1; },
+  },
+  {
+    id: 'reactive', name: 'Reactive Plate', icon: '◎',
+    description: '8% chance to dodge incoming damage',
+    rarity: 'uncommon',
+    apply: (p) => { p.dodgeChance = (p.dodgeChance || 0) + 0.08; },
+  },
 
-  // ===== RARE =====
+  // =============================================================
+  // RARE  — build-defining
+  // =============================================================
   {
     id: 'multishot', name: 'Multi-Shot', icon: '☰',
-    description: '+1 parallel bullet',
+    description: '+1 parallel bullet (slight per-bullet dmg)',
     rarity: 'rare',
-    apply: (p) => { p.multishot += 1; },
+    apply: (p) => {
+      p.multishot += 1;
+      p.damage *= 0.92;       // small tax to keep multi from snowballing
+    },
   },
   {
     id: 'spread', name: 'Spread Shot', icon: '※',
-    description: '+2 angled bullets',
+    description: '+2 angled bullets (slight per-bullet dmg)',
     rarity: 'rare',
-    apply: (p) => { p.spread += 1; },
+    apply: (p) => { p.spread += 1; p.damage *= 0.94; },
   },
   {
     id: 'dash', name: 'Dash Drive', icon: '⟫',
-    description: 'Unlock dash (Shift) — 0.3s i-frames',
+    description: 'Unlock dash (Shift) — i-frames during dash',
     rarity: 'rare',
     once: true,
     requires: (p) => !p.canDash,
@@ -126,6 +194,7 @@ const UPGRADES = [
       p.maxShield += 1;
       p.shield = p.maxShield;
     },
+    requires: (p) => p.maxShield < 4,   // cap so it's not infinite tanking
   },
   {
     id: 'explode', name: 'Explosive Rounds', icon: '✸',
@@ -142,63 +211,27 @@ const UPGRADES = [
     apply: (p) => { p.homing = (p.homing || 0) + 4; },
   },
   {
-    id: 'critdmg', name: 'Devastation', icon: '★',
-    description: '+0.5x crit damage multiplier',
-    rarity: 'rare',
-    apply: (p) => { p.critMult += 0.5; },
-  },
-
-  // ===== TRADE-OFFS =====
-  {
     id: 'berserker', name: 'Berserker', icon: '☠',
-    description: '+40% damage, −15 max HP',
+    description: '+35% damage, −12 max HP',
     rarity: 'rare',
     apply: (p) => {
-      p.damage *= 1.4;
-      p.maxHp = Math.max(20, p.maxHp - 15);
+      p.damage *= 1.35;
+      p.maxHp = Math.max(20, p.maxHp - 12);
       p.hp = Math.min(p.hp, p.maxHp);
     },
   },
   {
     id: 'glasscannon', name: 'Glass Cannon', icon: '◆',
-    description: '+40% fire rate, take +20% damage',
+    description: '+35% fire rate, take +25% damage',
     rarity: 'rare',
     apply: (p) => {
-      p.fireRate *= 1.4;
-      p.damageTakenMult *= 1.2;
+      p.fireRate *= 1.35;
+      p.damageTakenMult *= 1.25;
     },
-  },
-
-  // ===== NEW: SITUATIONAL & ELEMENTAL =====
-  {
-    id: 'movers_edge', name: "Mover's Edge", icon: '↗',
-    description: '+22% damage while moving',
-    rarity: 'uncommon',
-    apply: (p) => { p.moversEdge += 0.22; },
-  },
-  {
-    id: 'iron_will', name: 'Iron Will', icon: '⛨',
-    description: '+50% i-frame duration after a hit',
-    rarity: 'uncommon',
-    apply: (p) => { p.iframeMult *= 1.5; },
-    once: true,
-  },
-  {
-    id: 'adrenaline', name: 'Adrenaline', icon: '!',
-    description: 'At low HP (<30%), +35% fire rate',
-    rarity: 'uncommon',
-    once: true,
-    apply: (p) => { p.adrenaline = true; },
-  },
-  {
-    id: 'kill_heal', name: 'Salvage Drone', icon: '⚙',
-    description: 'Heal 3% max HP on kill',
-    rarity: 'uncommon',
-    apply: (p) => { p.killHeal += 0.03; },
   },
   {
     id: 'glass_hull', name: 'Glass Hull', icon: '◇',
-    description: '+80% damage when shield empty',
+    description: '+60% damage when shield is empty',
     rarity: 'rare',
     once: true,
     requires: (p) => p.maxShield > 0,
@@ -213,64 +246,142 @@ const UPGRADES = [
   },
   {
     id: 'burn_shot', name: 'Burn Rounds', icon: '※',
-    description: 'Hits ignite for 6 dps over 2s (stacks)',
+    description: 'Hits ignite for 5 dps over 2s (stacks)',
     rarity: 'rare',
     apply: (p) => {
       if (p.burnDps === 0) p.burnDuration = 2.0;
-      p.burnDps += 6;
+      p.burnDps += 5;
     },
   },
   {
     id: 'combo_master', name: 'Combo Master', icon: '∞',
-    description: '+1% damage per combo (max +50%)',
+    description: '+0.8% damage per combo (cap +40%)',
     rarity: 'rare',
-    apply: (p) => { p.comboMaster += 0.01; },
+    apply: (p) => { p.comboMaster += 0.008; },
   },
   {
-    id: 'movers_aim', name: 'Steady Sights', icon: '◎',
-    description: '+8% crit chance and +0.3× crit dmg',
+    id: 'multi_crit', name: 'Multi-Crit', icon: '✦✦',
+    description: 'When one bullet crits, all bullets that shot crit',
     rarity: 'rare',
-    apply: (p) => { p.critChance += 0.08; p.critMult += 0.3; },
+    once: true,
+    apply: (p) => { p.multiCrit = true; },
+  },
+  {
+    id: 'charged', name: 'Charged Shot', icon: '◆',
+    description: 'Every 5th shot deals +120% damage',
+    rarity: 'rare',
+    once: true,
+    apply: (p) => { p.chargedShot = true; },
+  },
+  {
+    id: 'riposte', name: 'Riposte', icon: '↺',
+    description: 'After taking a hit, next 5 shots +75% dmg',
+    rarity: 'rare',
+    once: true,
+    apply: (p) => { p.riposte = true; },
   },
 
-  // ===== BOSS-LOCKED (after defeating any boss) =====
+  // =============================================================
+  // BOSS-LOCKED RARE  — unlocks after defeating bosses
+  // =============================================================
   {
     id: 'twin_cannon', name: 'Twin Cannon', icon: '⫸',
     description: '+1 multishot AND +1 spread',
     rarity: 'rare',
     once: true,
     requires: (p) => p.bossesDefeated >= 1,
-    apply: (p) => { p.multishot += 1; p.spread += 1; },
+    apply: (p) => { p.multishot += 1; p.spread += 1; p.damage *= 0.88; },
   },
   {
     id: 'volatile', name: 'Volatile Rounds', icon: '⊛',
-    description: 'Hits splash 1 nearby enemy (60% dmg)',
+    description: 'Hits splash 1 nearby enemy (55% dmg)',
     rarity: 'rare',
     requires: (p) => p.bossesDefeated >= 1,
     apply: (p) => { p.splashChain += 1; },
   },
   {
     id: 'chrono', name: 'Chrono Field', icon: '◷',
-    description: 'All enemies move 15% slower',
+    description: 'All enemies move 12% slower',
     rarity: 'rare',
     requires: (p) => p.bossesDefeated >= 1,
-    apply: (p) => { p.chronoField = Math.min(0.45, p.chronoField + 0.15); },
+    apply: (p) => { p.chronoField = Math.min(0.35, p.chronoField + 0.12); },
+  },
+
+  // =============================================================
+  // EPIC  — rare game-changers, mostly one-time
+  // =============================================================
+  {
+    id: 'devastation', name: 'Devastation', icon: '★',
+    description: '+0.4× crit damage multiplier',
+    rarity: 'epic',
+    apply: (p) => { p.critMult += 0.4; },
+  },
+  {
+    id: 'steady_sights', name: 'Steady Sights', icon: '◎',
+    description: '+8% crit chance and +0.25× crit dmg',
+    rarity: 'epic',
+    apply: (p) => { p.critChance += 0.08; p.critMult += 0.25; },
+  },
+  {
+    id: 'damage_mastery', name: 'Damage Mastery', icon: '✚⚔',
+    description: '+50% damage',
+    rarity: 'epic',
+    once: true,
+    apply: (p) => { p.damage *= 1.5; },
+  },
+  {
+    id: 'doppler', name: 'Doppler Drive', icon: '⫷⫸',
+    description: 'Bullets clone on first hit (50% dmg)',
+    rarity: 'epic',
+    once: true,
+    apply: (p) => { p.doppler = true; },
+  },
+  {
+    id: 'eclipse', name: 'Eclipse Burst', icon: '◐',
+    description: 'Every 12s — 3s of 2× fire rate',
+    rarity: 'epic',
+    once: true,
+    apply: (p) => { p.eclipseBurst = true; p.eclipseTimer = 12; },
+  },
+  {
+    id: 'final_stand', name: 'Final Stand', icon: '✶',
+    description: 'Below 20% HP: +70% dmg dealt, −50% dmg taken',
+    rarity: 'epic',
+    once: true,
+    apply: (p) => { p.finalStand = true; },
   },
   {
     id: 'apex', name: 'Apex Predator', icon: '✪',
     description: '+25% damage, +1 multishot',
-    rarity: 'rare',
+    rarity: 'epic',
     once: true,
     requires: (p) => p.bossesDefeated >= 2,
     apply: (p) => { p.damage *= 1.25; p.multishot += 1; },
   },
+  {
+    id: 'phoenix', name: 'Phoenix', icon: '♁',
+    description: 'Revive once at 50% HP on death',
+    rarity: 'epic',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 1,
+    apply: (p) => { p.phoenix = true; },
+  },
+  {
+    id: 'spread_mastery', name: 'Spread Mastery', icon: '※※',
+    description: '+3 spread bullets',
+    rarity: 'epic',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 2,
+    apply: (p) => { p.spread += 3; p.damage *= 0.85; },
+  },
 ];
 
-const RARITY_WEIGHTS = { common: 100, uncommon: 50, rare: 18 };
+const RARITY_WEIGHTS = { common: 100, uncommon: 50, rare: 18, epic: 4 };
 const RARITY_COLORS = {
   common: '#88aaee',
   uncommon: '#44ddff',
   rare: '#ff66dd',
+  epic: '#ffaa00',
 };
 
 function rollUpgrades(player, count) {
@@ -284,8 +395,9 @@ function rollUpgrades(player, count) {
   const luck = player.luck || 0;
   const weights = pool.map(u => {
     let w = RARITY_WEIGHTS[u.rarity] || 30;
-    // Lucky Charm: boost rare and uncommon weights
-    if (u.rarity === 'rare') w *= (1 + luck * 4);
+    // Lucky Charm: boost rare/epic weights significantly, uncommon mildly
+    if (u.rarity === 'epic') w *= (1 + luck * 6);
+    else if (u.rarity === 'rare') w *= (1 + luck * 4);
     else if (u.rarity === 'uncommon') w *= (1 + luck * 1.5);
     return w;
   });

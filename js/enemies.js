@@ -68,10 +68,14 @@ class Enemy {
       this.behave(dt, player, enemies, enemyBullets);
     }
 
-    this.x += this.knockX * dt;
-    this.y += this.knockY * dt;
-    this.knockX = decay(this.knockX, 6, dt);
-    this.knockY = decay(this.knockY, 6, dt);
+    // Knockback removed (see takeDamage comment) — knockX/knockY decay if anything else
+    // ever pokes them, but we no longer apply force from bullet hits.
+    if (this.knockX || this.knockY) {
+      this.x += this.knockX * dt;
+      this.y += this.knockY * dt;
+      this.knockX = decay(this.knockX, 8, dt);
+      this.knockY = decay(this.knockY, 8, dt);
+    }
     if (this.contactCooldown > 0) this.contactCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
     this.angle += this.spinRate * dt;
@@ -96,12 +100,8 @@ class Enemy {
     this.hp -= amount;
     this.hitFlash = 0.1;
     this.scaleP = 1.2;
-    if (fromX !== undefined) {
-      const a = angleBetween(fromX, fromY, this.x, this.y);
-      const force = 180;
-      this.knockX += Math.cos(a) * force;
-      this.knockY += Math.sin(a) * force;
-    }
+    // Knockback removed — bosses kept getting pushed off-screen. Hit-pop scale + flash
+    // still provides feel without breaking encounters.
     addFloatingText(this.x, this.y - this.radius - 4, `${Math.round(amount)}`, '#ffffaa', 14);
     spark(this.x, this.y, this.color, 5, 180);
     sfxHit();
@@ -427,72 +427,121 @@ class Bomber extends Enemy {
 class Boss extends Enemy {
   constructor(x, y, level = 1) {
     super(x, y, {
-      hp: 350 + level * 120,
+      hp: 600 + level * 280,
       radius: 50,
-      speed: 55 + level * 4,
-      damage: 35,
+      speed: 60 + level * 5,
+      damage: 40 + level * 7,
       color: '#770077',
       outline: '#ff66ff',
-      score: 250 * level,
-      credits: 18 + level * 6,
+      score: 300 * level,
+      credits: 22 + level * 8,
       type: 'boss',
     });
     this.level = level;
-    this.shootTimer = 1.5;
+    this.shootTimer = 1.2;
     this.spawnTimer = 4;
-    this.dashTimer = rand(3, 5);
+    this.chargeCooldown = rand(5, 8);
+    this.chargeTimer = 0;      // > 0 while ramming
+    this.chargeAngle = 0;
     this.phase = 0;
     this.spinRate = 0.6;
     this.subAngle = 0;
+    this.aimedShotTimer = 2;
   }
   behave(dt, player, enemies, enemyBullets) {
     const a = angleBetween(this.x, this.y, player.x, player.y);
     const d = dist(this.x, this.y, player.x, player.y);
-    if (d > 240) {
-      this.vx = Math.cos(a) * this.speed;
-      this.vy = Math.sin(a) * this.speed;
-    } else {
-      const sa = a + Math.PI / 2;
-      this.vx = Math.cos(sa) * this.speed * 0.7;
-      this.vy = Math.sin(sa) * this.speed * 0.7;
-    }
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
     this.subAngle += dt * 2;
 
-    // Phase up at low HP
+    // ===== Charge attack — telegraphed ram toward player every 5-8s =====
+    this.chargeCooldown -= dt;
+    if (this.chargeCooldown <= 0 && this.chargeTimer <= 0) {
+      this.chargeCooldown = this.phase >= 1 ? rand(4, 6) : rand(6, 9);
+      this.chargeTimer = 0.9;
+      this.chargeAngle = a;
+      // brief telegraph flash
+      flash(255, 80, 80, 0.18, 3);
+      sfxEnemyShoot();
+    }
+    if (this.chargeTimer > 0) {
+      const cspeed = this.speed * 4;
+      this.x += Math.cos(this.chargeAngle) * cspeed * dt;
+      this.y += Math.sin(this.chargeAngle) * cspeed * dt;
+      // charge trail
+      addParticle(this.x, this.y, {
+        vx: rand(-30, 30), vy: rand(-30, 30),
+        color: '#ff66ff', life: 0.35, size: rand(3, 6), drag: 5,
+      });
+      this.chargeTimer -= dt;
+    } else {
+      // Normal movement: maintain a "danger range" around the player.
+      if (d > 280) {
+        this.vx = Math.cos(a) * this.speed;
+        this.vy = Math.sin(a) * this.speed;
+      } else if (d < 180) {
+        // back off if too close (gives ranged windows but stays threatening)
+        this.vx = -Math.cos(a) * this.speed * 0.6;
+        this.vy = -Math.sin(a) * this.speed * 0.6;
+      } else {
+        const sa = a + Math.PI / 2;
+        this.vx = Math.cos(sa) * this.speed * 0.8;
+        this.vy = Math.sin(sa) * this.speed * 0.8;
+      }
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+    }
+
+    // Keep boss inside the play area — it's huge and shouldn't drift off.
+    // (We use world bounds from the player's clamp range via enemies array? simpler: pin to screen)
+    if (typeof W !== 'undefined') this.x = clamp(this.x, this.radius, W - this.radius);
+    if (typeof H !== 'undefined') this.y = clamp(this.y, this.radius, H - this.radius);
+
+    // ===== Phase transitions =====
     const ratio = this.hp / this.maxHp;
-    if (this.phase === 0 && ratio < 0.5) {
+    if (this.phase === 0 && ratio < 0.65) {
       this.phase = 1;
       this.spinRate = 1.2;
       shake(12, 0.4);
       flash(255, 100, 255, 0.3, 2);
     }
-    if (this.phase === 1 && ratio < 0.2) {
+    if (this.phase === 1 && ratio < 0.3) {
       this.phase = 2;
       this.spinRate = 2;
       shake(20, 0.5);
       flash(255, 80, 255, 0.4, 2);
     }
 
-    // Burst fire
+    // ===== Ring burst — radial volley =====
     this.shootTimer -= dt;
     if (this.shootTimer <= 0) {
-      this.shootTimer = this.phase === 2 ? 1.0 : (this.phase === 1 ? 1.5 : 2);
-      const n = 8 + this.phase * 2;
+      this.shootTimer = this.phase === 2 ? 0.85 : (this.phase === 1 ? 1.25 : 1.7);
+      const n = 10 + this.phase * 3;
       const baseA = this.subAngle;
       for (let i = 0; i < n; i++) {
         const ba = (i / n) * TAU + baseA;
-        enemyBullets.push(new EnemyBullet(this.x, this.y, ba, 200, 12, '#ff66ff'));
+        enemyBullets.push(new EnemyBullet(this.x, this.y, ba, 220, 14 + this.level * 2, '#ff66ff'));
       }
       sfxEnemyShoot();
     }
 
-    // Spawn minions
+    // ===== Aimed triple shot (phase 1+) =====
+    if (this.phase >= 1) {
+      this.aimedShotTimer -= dt;
+      if (this.aimedShotTimer <= 0) {
+        this.aimedShotTimer = this.phase === 2 ? 1.3 : 1.8;
+        const spread = 0.18;
+        for (let i = -1; i <= 1; i++) {
+          enemyBullets.push(new EnemyBullet(this.x, this.y, a + i * spread, 280, 12 + this.level * 2, '#ffaa44'));
+        }
+        sfxEnemyShoot();
+      }
+    }
+
+    // ===== Spawn minions =====
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      this.spawnTimer = this.phase === 2 ? 4 : (this.phase === 1 ? 5 : 6);
-      const count = 2 + this.phase;
+      this.spawnTimer = this.phase === 2 ? 3 : (this.phase === 1 ? 4.5 : 6);
+      const count = 2 + this.phase + Math.floor(this.level / 2);
       for (let i = 0; i < count; i++) {
         const sa = rand(0, TAU);
         const sx = this.x + Math.cos(sa) * (this.radius + 30);

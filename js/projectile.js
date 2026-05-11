@@ -18,6 +18,8 @@ class Bullet {
     this.burnDps = opts.burnDps ?? 0;
     this.burnDuration = opts.burnDuration ?? 0;
     this.splashChain = opts.splashChain ?? 0;
+    this.doppler = !!opts.doppler;     // clone on first hit
+    this.dopplerSpawned = false;
     this.life = opts.life ?? 2.2;
     this.dead = false;
     this.hitEnemies = new Set();

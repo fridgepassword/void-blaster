@@ -77,6 +77,69 @@ function pickControlMode(mx, my) {
   return null;
 }
 
+// ===== Difficulty selector =====
+const difficultyButtonRects = [];
+
+function drawDifficultySelector(ctx, x, y, w, currentKey, time) {
+  difficultyButtonRects.length = 0;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ctx.fillStyle = '#7799bb';
+  ctx.font = `14px "Courier New", monospace`;
+  ctx.fillText('DIFFICULTY', x + w / 2, y - 14);
+
+  const keys = Object.keys(DIFFICULTIES);
+  const btnW = (w - 24) / keys.length;
+  const btnH = 36;
+
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const d = DIFFICULTIES[k];
+    const bx = x + i * (btnW + 8);
+    const isActive = k === currentKey;
+    const hover = mouse.x >= bx && mouse.x <= bx + btnW &&
+                  mouse.y >= y && mouse.y <= y + btnH;
+
+    difficultyButtonRects.push({ x: bx, y, w: btnW, h: btnH, key: k });
+
+    ctx.fillStyle = isActive ? 'rgba(60, 90, 130, 0.95)' :
+                    hover ? 'rgba(40, 60, 90, 0.9)' : 'rgba(20, 30, 50, 0.85)';
+    ctx.fillRect(bx, y, btnW, btnH);
+
+    ctx.strokeStyle = isActive ? d.color : (hover ? '#5588bb' : '#446688');
+    ctx.lineWidth = isActive ? 2.5 : 1.5;
+    if (isActive) {
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = d.color;
+    }
+    ctx.strokeRect(bx, y, btnW, btnH);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = isActive ? d.color : '#aaccdd';
+    ctx.font = `bold ${btnW > 110 ? 14 : 12}px "Courier New", monospace`;
+    ctx.fillText(d.name, bx + btnW / 2, y + btnH / 2);
+  }
+
+  // Active difficulty description
+  const active = DIFFICULTIES[currentKey] || DIFFICULTIES.normal;
+  ctx.fillStyle = active.color;
+  ctx.font = '12px "Courier New", monospace';
+  ctx.fillText(active.desc, x + w / 2, y + btnH + 16);
+
+  ctx.restore();
+}
+
+function pickDifficulty(mx, my) {
+  for (const r of difficultyButtonRects) {
+    if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+      return r.key;
+    }
+  }
+  return null;
+}
+
 function drawTitleScreen(ctx, w, h, time) {
   ctx.save();
 
@@ -127,20 +190,24 @@ function drawTitleScreen(ctx, w, h, time) {
 
   ctx.shadowBlur = 0;
 
-  // Control mode selector
+  // Difficulty selector (above control mode)
   const selW = Math.min(560, w - 60);
   const selX = (w - selW) / 2;
-  const selY = h * 0.71;
+  const difY = h * 0.62;
+  drawDifficultySelector(ctx, selX, difY, selW, window.__settings.difficulty, time);
+
+  // Control mode selector
+  const selY = h * 0.75;
   drawControlSelector(ctx, selX, selY, selW, window.__settings.controlMode, time);
 
-  // Universal hints below selector
+  // Universal hints
   ctx.fillStyle = '#556677';
-  ctx.font = `12px "Courier New", monospace`;
+  ctx.font = `11px "Courier New", monospace`;
   ctx.textAlign = 'center';
-  const lineY = h * 0.88;
+  const lineY = h * 0.9;
   ctx.fillText('SHIFT — DASH (after upgrade)     ·     P / ESC — PAUSE     ·     M — MUTE', w / 2, lineY);
   ctx.fillStyle = '#cc7755';
-  ctx.fillText('KEEP MOVING — STANDING STILL FOR 1.5s MAKES YOU TAKE 2× DAMAGE', w / 2, lineY + 18);
+  ctx.fillText('KEEP MOVING — STANDING STILL FOR 1.5s MAKES YOU TAKE 2× DAMAGE', w / 2, lineY + 16);
 
   // High score badge
   if (window.__highScore && window.__highScore > 0) {

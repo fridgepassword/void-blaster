@@ -10,24 +10,29 @@ const ENEMY_COSTS = {
   bomber: 6,
 };
 
-function generateWave(waveNum) {
+function generateWave(waveNum, difficulty) {
   const out = [];
 
   if (waveNum % 5 === 0) {
     const lvl = Math.floor(waveNum / 5);
     out.push({ type: 'boss', level: lvl });
-    // Support minions scale with boss level
-    const supportCount = Math.min(7, 2 + lvl * 2);
+    // Support minions scale with boss level (more aggressive in late game)
+    const supportCount = Math.min(12, 3 + lvl * 2);
     for (let i = 0; i < supportCount; i++) {
       const r = Math.random();
-      if (lvl >= 2 && r < 0.3) out.push({ type: 'shooter' });
-      else if (lvl >= 2 && r < 0.5) out.push({ type: 'swarmer' });
+      if (lvl >= 3 && r < 0.2) out.push({ type: 'tank' });
+      else if (lvl >= 2 && r < 0.35) out.push({ type: 'shooter' });
+      else if (lvl >= 2 && r < 0.55) out.push({ type: 'swarmer' });
       else out.push({ type: 'grunt' });
     }
     return out;
   }
 
-  let budget = 6 + waveNum * 4;
+  // Budget compounds in late game so wave 10+ is dramatically more enemies.
+  // Wave 1: 11, wave 5: 28, wave 10: 60, wave 15: 105, wave 20: 165 (before difficulty mult).
+  let budget = 6 + waveNum * 4.5;
+  if (waveNum > 5) budget += Math.pow(waveNum - 5, 1.6) * 0.6;
+  if (difficulty && difficulty.waveBudgetMult) budget *= difficulty.waveBudgetMult;
 
   // Available enemy types unlock as the game progresses
   const types = ['grunt'];
@@ -78,7 +83,28 @@ function generateWave(waveNum) {
   return out;
 }
 
-function spawnEnemyFromSpec(spec, w, h) {
+// Per-wave stat scaling — enemies get tougher AND deal more damage in late game.
+function enemyWaveScale(waveNum) {
+  const w = Math.max(1, waveNum);
+  return {
+    hpMult:     1 + (w - 1) * 0.09 + Math.max(0, w - 8) * 0.05,   // wave 10 ~1.91x, wave 20 ~3.31x
+    dmgMult:    1 + (w - 1) * 0.05 + Math.max(0, w - 8) * 0.03,   // wave 10 ~1.51x, wave 20 ~2.31x
+    speedMult:  1 + (w - 1) * 0.015,                              // very gentle speed creep
+    scoreMult:  1 + (w - 1) * 0.04,                               // late kills are worth more
+    creditMult: 1 + Math.max(0, (w - 4)) * 0.04,                  // a bit more loot after wave 4
+  };
+}
+
+function applyWaveScale(enemy, scale) {
+  enemy.maxHp = Math.round(enemy.maxHp * scale.hpMult);
+  enemy.hp = enemy.maxHp;
+  enemy.damage = Math.round(enemy.damage * scale.dmgMult);
+  enemy.speed *= scale.speedMult;
+  enemy.scoreValue = Math.round(enemy.scoreValue * scale.scoreMult);
+  enemy.creditsValue = Math.max(1, Math.round(enemy.creditsValue * scale.creditMult));
+}
+
+function spawnEnemyFromSpec(spec, w, h, waveNum, difficulty) {
   const margin = 60;
   const side = randInt(0, 3);
   let x, y;
@@ -87,18 +113,30 @@ function spawnEnemyFromSpec(spec, w, h) {
   else if (side === 2) { x = rand(0, w); y = h + margin; }
   else { x = -margin; y = rand(0, h); }
 
+  let enemy;
   switch (spec.type) {
-    case 'grunt':   return new Grunt(x, y);
-    case 'swarmer': return new Swarmer(x, y);
-    case 'tank':    return new Tank(x, y);
-    case 'shooter': return new Shooter(x, y);
-    case 'bomber':  return new Bomber(x, y);
+    case 'grunt':   enemy = new Grunt(x, y); break;
+    case 'swarmer': enemy = new Swarmer(x, y); break;
+    case 'tank':    enemy = new Tank(x, y); break;
+    case 'shooter': enemy = new Shooter(x, y); break;
+    case 'bomber':  enemy = new Bomber(x, y); break;
     case 'boss': {
-      // boss spawns nearer center top
       const bx = w / 2 + rand(-100, 100);
       const by = -120;
-      return new Boss(bx, by, spec.level || 1);
+      enemy = new Boss(bx, by, spec.level || 1);
+      break;
     }
+    default: enemy = new Grunt(x, y);
   }
-  return new Grunt(x, y);
+  // Apply per-wave scaling (skip for bosses — they already scale via level).
+  if (spec.type !== 'boss' && waveNum) {
+    applyWaveScale(enemy, enemyWaveScale(waveNum));
+  }
+  // Apply difficulty modifiers (bosses included)
+  if (difficulty) {
+    enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * difficulty.enemyHpMult));
+    enemy.hp = enemy.maxHp;
+    enemy.damage = Math.max(1, Math.round(enemy.damage * difficulty.enemyDmgMult));
+  }
+  return enemy;
 }

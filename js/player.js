@@ -61,7 +61,7 @@ class Player {
     this.shopPurchases = {};       // id -> count
 
     // Conditional / new upgrade flags & values
-    this.luck = 0;                 // 0..0.25 — boosts rare/uncommon weight
+    this.luck = 0;                 // 0..0.25 — boosts rare/uncommon/epic weight
     this.iframeMult = 1;           // multiplier for invuln after damage
     this.moversEdge = 0;           // damage boost while moving
     this.glassHull = false;        // big damage when no shield
@@ -73,8 +73,26 @@ class Player {
     this.comboMaster = 0;          // damage scales with combo
     this.splashChain = 0;          // chain damage to nearby enemies
     this.chronoField = 0;          // global slow (% reduction)
-    this.iceArmor = false;         // bullets that slow self also build shield
     this.isMoving = false;         // updated each frame
+    this.bulletLifeMult = 1;       // bullet range/life multiplier
+
+    // New mechanics
+    this.steadyAim = false;        // first shot per volley +40%
+    this.endurance = 0;            // heal 6 HP every 8 kills (stack = +1)
+    this.enduranceCount = 0;
+    this.dodgeChance = 0;          // % chance to ignore damage
+    this.multiCrit = false;        // if true, all bullets in a shoot() share crit roll
+    this.chargedShot = false;      // every 5th shot deals +120%
+    this.shotsSinceCharge = 0;
+    this.riposte = false;          // after being hit, next 5 shots +75%
+    this.riposteShots = 0;
+    this.doppler = false;          // bullets clone on first hit (50% dmg)
+    this.eclipseBurst = false;     // periodic 3s 2× fire rate
+    this.eclipseTimer = 0;
+    this.eclipseActive = 0;
+    this.finalStand = false;       // <20% HP: +70% dmg, -50% taken
+    this.phoenix = false;          // one revive at 50% HP
+    this.phoenixUsed = false;
 
     // Stats display
     this.totalShots = 0;
@@ -201,12 +219,34 @@ class Player {
       }
     }
 
+    // Eclipse Burst — periodic fire-rate burst
+    if (this.eclipseBurst) {
+      if (this.eclipseActive > 0) {
+        this.eclipseActive -= dt;
+      } else {
+        this.eclipseTimer -= dt;
+        if (this.eclipseTimer <= 0) {
+          this.eclipseActive = 3;
+          this.eclipseTimer = 12;
+          flash(255, 200, 100, 0.2, 2);
+          for (let i = 0; i < 16; i++) {
+            const a = rand(0, TAU);
+            addParticle(this.x, this.y, {
+              vx: Math.cos(a) * 220, vy: Math.sin(a) * 220,
+              color: '#ffaa00', life: 0.45, size: rand(2, 4), drag: 4,
+            });
+          }
+        }
+      }
+    }
+
     // Auto-fire — always shooting at the auto-aimed angle, only when there's a target.
     if (this.fireTimer <= 0) {
       if (this._hasTarget()) {
         this.shoot(bullets);
         let fr = this.fireRate;
-        if (this.adrenaline && this.hp < this.maxHp * 0.3) fr *= 1.35;
+        if (this.adrenaline && this.hp < this.maxHp * 0.3) fr *= 1.3;
+        if (this.eclipseActive > 0) fr *= 2.0;
         this.fireTimer = 1 / fr;
       } else {
         this.fireTimer = 0.2;
@@ -237,38 +277,58 @@ class Player {
     const baseAng = this.ang;
     const spreadStep = 0.16;
 
-    // Multishot: parallel offset bullets
+    // Multi-crit: roll once for the whole volley
+    const volleyCrit = this.multiCrit ? (Math.random() < this.critChance) : null;
+    // Charged-shot bonus on every 5th shot
+    this.shotsSinceCharge++;
+    const isCharged = this.chargedShot && (this.shotsSinceCharge % 5 === 0);
+    // Steady-aim bonus only on first bullet of the volley
+    let isFirstOfVolley = this.steadyAim;
+
+    // Multishot
     for (let i = 0; i < this.multishot; i++) {
       const offset = (i - (this.multishot - 1) / 2) * 10;
-      this._spawnBullet(bullets, baseAng, offset);
+      this._spawnBullet(bullets, baseAng, offset, { volleyCrit, isCharged, isFirstOfVolley });
+      isFirstOfVolley = false;
     }
-    // Spread: angled bullets
+    // Spread
     for (let i = 1; i <= this.spread; i++) {
-      this._spawnBullet(bullets, baseAng + spreadStep * i, 0);
-      this._spawnBullet(bullets, baseAng - spreadStep * i, 0);
+      this._spawnBullet(bullets, baseAng + spreadStep * i, 0, { volleyCrit, isCharged });
+      this._spawnBullet(bullets, baseAng - spreadStep * i, 0, { volleyCrit, isCharged });
     }
+
+    // Decrement riposte counter (one volley = one count)
+    if (this.riposteShots > 0) this.riposteShots--;
+
     sfxShoot();
     this.totalShots += this.multishot + this.spread * 2;
 
-    // Tiny muzzle flash
     const fx = this.x + Math.cos(baseAng) * (this.radius + 4);
     const fy = this.y + Math.sin(baseAng) * (this.radius + 4);
     spark(fx, fy, '#ffffff', 3, 200);
   }
 
-  _spawnBullet(bullets, ang, perpOffset) {
+  _spawnBullet(bullets, ang, perpOffset, opts = {}) {
     const px = Math.cos(ang + Math.PI / 2) * perpOffset;
     const py = Math.sin(ang + Math.PI / 2) * perpOffset;
-    const isCrit = Math.random() < this.critChance;
+
+    // Crit logic — volley-locked if Multi-Crit is active, otherwise rolled per bullet
+    const isCrit = (opts.volleyCrit !== null && opts.volleyCrit !== undefined)
+                   ? opts.volleyCrit
+                   : Math.random() < this.critChance;
 
     // Compute damage with conditional modifiers
     let dmg = this.damage;
     if (this.moversEdge > 0 && this.isMoving) dmg *= 1 + this.moversEdge;
-    if (this.glassHull && this.maxShield > 0 && this.shield === 0) dmg *= 1.8;
-    if (this.glassHull && this.maxShield === 0) dmg *= 1.3; // smaller boost if no shield ever
+    if (this.glassHull && this.maxShield > 0 && this.shield === 0) dmg *= 1.6;
+    if (this.glassHull && this.maxShield === 0) dmg *= 1.25;
     if (this.comboMaster > 0 && typeof combo !== 'undefined') {
-      dmg *= 1 + Math.min(0.5, combo * this.comboMaster);
+      dmg *= 1 + Math.min(0.4, combo * this.comboMaster);
     }
+    if (opts.isFirstOfVolley) dmg *= 1.4;          // Steady Aim
+    if (opts.isCharged) dmg *= 2.2;                // Charged Shot
+    if (this.riposteShots > 0) dmg *= 1.75;        // Riposte buff window
+    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 1.7;
     if (isCrit) dmg *= this.critMult;
 
     bullets.push(new Bullet(
@@ -278,7 +338,7 @@ class Player {
       this.bulletSpeed,
       dmg,
       {
-        size: this.bulletSize,
+        size: this.bulletSize * (opts.isCharged ? 1.4 : 1),
         pierce: this.pierce,
         isCrit,
         explode: this.bulletExplode,
@@ -288,12 +348,22 @@ class Player {
         burnDps: this.burnDps,
         burnDuration: this.burnDuration,
         splashChain: this.splashChain,
+        doppler: this.doppler,
+        life: 2.2 * (this.bulletLifeMult || 1),
       }
     ));
   }
 
   takeDamage(amount) {
     if (this.invincible > 0) return false;
+
+    // Reactive Plate — dodge chance
+    if (this.dodgeChance > 0 && Math.random() < this.dodgeChance) {
+      addFloatingText(this.x, this.y - this.radius - 8, 'DODGE', '#88ffaa', 14);
+      spark(this.x, this.y, '#88ffaa', 10, 200);
+      this.invincible = 0.2;
+      return false;
+    }
 
     if (this.shield > 0) {
       this.shield--;
@@ -303,12 +373,21 @@ class Player {
       shake(8, 0.18);
       sfxShield();
       spark(this.x, this.y, '#88ddff', 12, 250);
+      // Trigger Riposte from a shield break too
+      if (this.riposte) this.riposteShots = 5;
       return false;
     }
 
     const exposed = this.stillTimer >= this.stillThreshold;
     let dmg = amount * this.damageTakenMult;
     if (exposed) dmg *= this.stillDamageMult;
+    // Final Stand — damage reduction at very low HP
+    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 0.5;
+    const diff = window.__getDifficulty && window.__getDifficulty();
+    if (diff && diff.playerDmgTakenMult) dmg *= diff.playerDmgTakenMult;
+
+    // Riposte — trigger a damage-buff window
+    if (this.riposte) this.riposteShots = 5;
 
     this.hp -= dmg;
     this.invincible = 0.7 * (this.iframeMult || 1);
