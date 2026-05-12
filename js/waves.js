@@ -8,6 +8,11 @@ const ENEMY_COSTS = {
   shooter: 5,
   tank: 8,
   bomber: 6,
+  splitter: 5,
+  charger: 6,
+  sniper: 7,
+  sentinel: 8,
+  healer: 6,
 };
 
 function generateWave(waveNum, difficulty) {
@@ -38,23 +43,39 @@ function generateWave(waveNum, difficulty) {
   const types = ['grunt'];
   if (waveNum >= 2) types.push('swarmer');
   if (waveNum >= 3) types.push('shooter');
-  if (waveNum >= 4) types.push('tank');
-  if (waveNum >= 6) types.push('bomber');
+  if (waveNum >= 4) types.push('tank', 'splitter');
+  if (waveNum >= 5) types.push('charger');
+  if (waveNum >= 6) types.push('bomber', 'sniper');
+  if (waveNum >= 7) types.push('sentinel');
+  if (waveNum >= 8) types.push('healer');
 
   // Theme some waves to feel distinct
   const themeRoll = Math.random();
   let weights;
-  if (themeRoll < 0.15 && types.includes('swarmer')) {
+  if (themeRoll < 0.12 && types.includes('swarmer')) {
     // Swarm wave
-    weights = { grunt: 1, swarmer: 6, shooter: 0.5, tank: 0.2, bomber: 0.5 };
-  } else if (themeRoll < 0.3 && types.includes('tank')) {
+    weights = { grunt: 1, swarmer: 6, shooter: 0.5, tank: 0.2, bomber: 0.5,
+                splitter: 2, charger: 0.5, sniper: 0.3, sentinel: 0.2, healer: 0 };
+  } else if (themeRoll < 0.24 && types.includes('tank')) {
     // Heavy wave
-    weights = { grunt: 1, swarmer: 0.5, shooter: 1, tank: 4, bomber: 0.5 };
-  } else if (themeRoll < 0.45 && types.includes('shooter')) {
-    // Sniper wave
-    weights = { grunt: 1, swarmer: 0.5, shooter: 4, tank: 1, bomber: 0.5 };
+    weights = { grunt: 1, swarmer: 0.5, shooter: 1, tank: 4, bomber: 0.5,
+                splitter: 0.8, charger: 1, sniper: 0.4, sentinel: 1, healer: 0.5 };
+  } else if (themeRoll < 0.36 && types.includes('shooter')) {
+    // Long-range wave
+    weights = { grunt: 0.8, swarmer: 0.4, shooter: 3, tank: 0.8, bomber: 0.3,
+                splitter: 0.3, charger: 0.3, sniper: 3, sentinel: 1.5, healer: 0.4 };
+  } else if (themeRoll < 0.48 && types.includes('charger')) {
+    // Aggro wave — chargers + bombers
+    weights = { grunt: 1, swarmer: 1.2, shooter: 0.5, tank: 0.5, bomber: 2,
+                splitter: 1, charger: 3, sniper: 0.3, sentinel: 0.3, healer: 0.3 };
+  } else if (themeRoll < 0.58 && types.includes('healer')) {
+    // Support wave — healers + tanks
+    weights = { grunt: 1.2, swarmer: 0.6, shooter: 1, tank: 2.5, bomber: 0.5,
+                splitter: 0.6, charger: 0.8, sniper: 0.6, sentinel: 1, healer: 2.5 };
   } else {
-    weights = { grunt: 3, swarmer: 2, shooter: 2, tank: 1.5, bomber: 1 };
+    // Mixed default
+    weights = { grunt: 3, swarmer: 2, shooter: 2, tank: 1.5, bomber: 1,
+                splitter: 1.2, charger: 1.2, sniper: 0.8, sentinel: 0.8, healer: 0.5 };
   }
 
   // Force a tank or bomber as anchor in later waves
@@ -115,11 +136,16 @@ function spawnEnemyFromSpec(spec, w, h, waveNum, difficulty) {
 
   let enemy;
   switch (spec.type) {
-    case 'grunt':   enemy = new Grunt(x, y); break;
-    case 'swarmer': enemy = new Swarmer(x, y); break;
-    case 'tank':    enemy = new Tank(x, y); break;
-    case 'shooter': enemy = new Shooter(x, y); break;
-    case 'bomber':  enemy = new Bomber(x, y); break;
+    case 'grunt':    enemy = new Grunt(x, y); break;
+    case 'swarmer':  enemy = new Swarmer(x, y); break;
+    case 'tank':     enemy = new Tank(x, y); break;
+    case 'shooter':  enemy = new Shooter(x, y); break;
+    case 'bomber':   enemy = new Bomber(x, y); break;
+    case 'splitter': enemy = new Splitter(x, y); break;
+    case 'charger':  enemy = new Charger(x, y); break;
+    case 'sniper':   enemy = new Sniper(x, y); break;
+    case 'sentinel': enemy = new Sentinel(x, y); break;
+    case 'healer':   enemy = new Healer(x, y); break;
     case 'boss': {
       const bx = w / 2 + rand(-100, 100);
       const by = -120;

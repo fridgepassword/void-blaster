@@ -7,39 +7,39 @@ const UPGRADES = [
   // =============================================================
   {
     id: 'damage', name: 'Damage Boost', icon: '⚔',
-    description: '+22% bullet damage',
+    description: '+15% bullet damage',
     rarity: 'common',
-    apply: (p) => { p.damage *= 1.22; },
+    apply: (p) => { p.damage *= 1.15; },
   },
   {
     id: 'firerate', name: 'Rapid Fire', icon: '⚡',
-    description: '+18% fire rate',
+    description: '+12% fire rate',
     rarity: 'common',
-    apply: (p) => { p.fireRate *= 1.18; },
+    apply: (p) => { p.fireRate *= 1.12; },
   },
   {
     id: 'speed', name: 'Swift Engines', icon: '»',
-    description: '+12% movement speed',
+    description: '+8% movement speed',
     rarity: 'common',
-    apply: (p) => { p.speed *= 1.12; },
+    apply: (p) => { p.speed *= 1.08; },
   },
   {
     id: 'hp', name: 'Reinforced Hull', icon: '+',
-    description: '+20 max HP, full heal',
+    description: '+12 max HP, full heal',
     rarity: 'common',
-    apply: (p) => { p.maxHp += 20; p.hp = p.maxHp; },
+    apply: (p) => { p.maxHp += 12; p.hp = p.maxHp; },
   },
   {
     id: 'bulletspeed', name: 'Velocity Tuning', icon: '→',
-    description: '+25% bullet speed',
+    description: '+18% bullet speed',
     rarity: 'common',
-    apply: (p) => { p.bulletSpeed *= 1.25; },
+    apply: (p) => { p.bulletSpeed *= 1.18; },
   },
   {
     id: 'bulletsize', name: 'Heavy Rounds', icon: '●',
-    description: '+20% bullet size',
+    description: '+14% bullet size',
     rarity: 'common',
-    apply: (p) => { p.bulletSize *= 1.20; },
+    apply: (p) => { p.bulletSize *= 1.14; },
   },
   {
     id: 'heal', name: 'Repair Kit', icon: '♥',
@@ -49,15 +49,15 @@ const UPGRADES = [
   },
   {
     id: 'targeting', name: 'Targeting', icon: '◉',
-    description: '+5% crit chance',
+    description: '+3% crit chance',
     rarity: 'common',
-    apply: (p) => { p.critChance += 0.05; },
+    apply: (p) => { p.critChance += 0.03; },
   },
   {
     id: 'range', name: 'Range Extender', icon: '⤳',
-    description: '+15% bullet range',
+    description: '+10% bullet range',
     rarity: 'common',
-    apply: (p) => { p.bulletLifeMult = (p.bulletLifeMult || 1) * 1.15; },
+    apply: (p) => { p.bulletLifeMult = (p.bulletLifeMult || 1) * 1.10; },
   },
 
   // =============================================================
@@ -71,92 +71,92 @@ const UPGRADES = [
   },
   {
     id: 'crit', name: 'Critical Strike', icon: '✦',
-    description: '+10% crit chance',
+    description: '+7% crit chance',
     rarity: 'uncommon',
-    apply: (p) => { p.critChance += 0.10; },
+    apply: (p) => { p.critChance += 0.07; },
   },
   {
     id: 'lifesteal', name: 'Vampiric Rounds', icon: '♢',
-    description: '+4% lifesteal',
+    description: '+3% lifesteal',
     rarity: 'uncommon',
-    apply: (p) => { p.lifesteal += 0.04; },
+    apply: (p) => { p.lifesteal += 0.03; },
   },
   {
     id: 'regen', name: 'Regeneration', icon: '↻',
-    description: '+1 HP/s regeneration',
+    description: '+0.7 HP/s regeneration',
     rarity: 'uncommon',
-    apply: (p) => { p.regenRate += 1; },
+    apply: (p) => { p.regenRate += 0.7; },
   },
   {
     id: 'bouncy', name: 'Bouncy Bullets', icon: '⤴',
-    description: 'Bullets bounce off walls (+2)',
+    description: 'Bullets bounce off walls (+1)',
     rarity: 'uncommon',
-    apply: (p) => { p.bouncy += 2; },
+    apply: (p) => { p.bouncy += 1; },
   },
   {
     id: 'score', name: 'Profit Margin', icon: '$',
-    description: '+22% score per kill',
+    description: '+18% score per kill',
     rarity: 'uncommon',
-    apply: (p) => { p.scoreMult *= 1.22; },
+    apply: (p) => { p.scoreMult *= 1.18; },
   },
   {
     id: 'dashcd', name: 'Coolant Boost', icon: '⏱',
-    description: '−20% dash cooldown',
+    description: '−15% dash cooldown',
     rarity: 'uncommon',
     requires: (p) => p.canDash,
-    apply: (p) => { p.dashCooldownMax *= 0.8; },
+    apply: (p) => { p.dashCooldownMax *= 0.85; },
   },
   {
     id: 'shieldspeed', name: 'Quick Recharge', icon: '⟳',
-    description: '−25% shield recharge time',
+    description: '−20% shield recharge time',
     rarity: 'uncommon',
     requires: (p) => p.maxShield > 0,
-    apply: (p) => { p.shieldRecharge *= 0.75; },
+    apply: (p) => { p.shieldRecharge *= 0.8; },
   },
   {
     id: 'movers_edge', name: "Mover's Edge", icon: '↗',
-    description: '+18% damage while moving',
+    description: '+12% damage while moving',
     rarity: 'uncommon',
-    apply: (p) => { p.moversEdge += 0.18; },
+    apply: (p) => { p.moversEdge += 0.12; },
   },
   {
     id: 'iron_will', name: 'Iron Will', icon: '⛨',
-    description: '+50% i-frame duration after a hit',
+    description: '+35% i-frame duration after a hit',
     rarity: 'uncommon',
-    apply: (p) => { p.iframeMult *= 1.5; },
+    apply: (p) => { p.iframeMult *= 1.35; },
     once: true,
   },
   {
     id: 'adrenaline', name: 'Adrenaline', icon: '!',
-    description: 'At low HP (<30%), +30% fire rate',
+    description: 'At low HP (<30%), +22% fire rate',
     rarity: 'uncommon',
     once: true,
     apply: (p) => { p.adrenaline = true; },
   },
   {
     id: 'kill_heal', name: 'Salvage Drone', icon: '⚙',
-    description: 'Heal 2.5% max HP on kill',
+    description: 'Heal 1.8% max HP on kill',
     rarity: 'uncommon',
-    apply: (p) => { p.killHeal += 0.025; },
+    apply: (p) => { p.killHeal += 0.018; },
   },
   {
     id: 'steady_aim', name: 'Steady Aim', icon: '◈',
-    description: 'First shot in a volley deals +40%',
+    description: 'First shot in a volley deals +25%',
     rarity: 'uncommon',
     once: true,
     apply: (p) => { p.steadyAim = true; },
   },
   {
     id: 'endurance', name: 'Endurance', icon: '✚',
-    description: 'Heal 6 HP every 8 kills',
+    description: 'Heal 4 HP every 10 kills',
     rarity: 'uncommon',
     apply: (p) => { p.endurance = (p.endurance || 0) + 1; },
   },
   {
     id: 'reactive', name: 'Reactive Plate', icon: '◎',
-    description: '8% chance to dodge incoming damage',
+    description: '5% chance to dodge incoming damage',
     rarity: 'uncommon',
-    apply: (p) => { p.dodgeChance = (p.dodgeChance || 0) + 0.08; },
+    apply: (p) => { p.dodgeChance = (p.dodgeChance || 0) + 0.05; },
   },
 
   // =============================================================
@@ -164,18 +164,18 @@ const UPGRADES = [
   // =============================================================
   {
     id: 'multishot', name: 'Multi-Shot', icon: '☰',
-    description: '+1 parallel bullet (slight per-bullet dmg)',
+    description: '+1 parallel bullet (−14% per-bullet dmg)',
     rarity: 'rare',
     apply: (p) => {
       p.multishot += 1;
-      p.damage *= 0.92;       // small tax to keep multi from snowballing
+      p.damage *= 0.86;
     },
   },
   {
     id: 'spread', name: 'Spread Shot', icon: '※',
-    description: '+2 angled bullets (slight per-bullet dmg)',
+    description: '+2 angled bullets (−10% per-bullet dmg)',
     rarity: 'rare',
-    apply: (p) => { p.spread += 1; p.damage *= 0.94; },
+    apply: (p) => { p.spread += 1; p.damage *= 0.90; },
   },
   {
     id: 'dash', name: 'Dash Drive', icon: '⟫',
@@ -190,11 +190,11 @@ const UPGRADES = [
     description: '+1 shield charge',
     rarity: 'rare',
     apply: (p) => {
-      if (p.maxShield === 0) p.shieldRecharge = 8;
+      if (p.maxShield === 0) p.shieldRecharge = 9;
       p.maxShield += 1;
       p.shield = p.maxShield;
     },
-    requires: (p) => p.maxShield < 4,   // cap so it's not infinite tanking
+    requires: (p) => p.maxShield < 3,   // tighter cap
   },
   {
     id: 'explode', name: 'Explosive Rounds', icon: '✸',
@@ -208,74 +208,74 @@ const UPGRADES = [
     id: 'homing', name: 'Homing Missiles', icon: '↗',
     description: 'Bullets curve toward enemies',
     rarity: 'rare',
-    apply: (p) => { p.homing = (p.homing || 0) + 4; },
+    apply: (p) => { p.homing = (p.homing || 0) + 3; },
   },
   {
     id: 'berserker', name: 'Berserker', icon: '☠',
-    description: '+35% damage, −12 max HP',
+    description: '+25% damage, −15 max HP',
     rarity: 'rare',
     apply: (p) => {
-      p.damage *= 1.35;
-      p.maxHp = Math.max(20, p.maxHp - 12);
+      p.damage *= 1.25;
+      p.maxHp = Math.max(20, p.maxHp - 15);
       p.hp = Math.min(p.hp, p.maxHp);
     },
   },
   {
     id: 'glasscannon', name: 'Glass Cannon', icon: '◆',
-    description: '+35% fire rate, take +25% damage',
+    description: '+25% fire rate, take +30% damage',
     rarity: 'rare',
     apply: (p) => {
-      p.fireRate *= 1.35;
-      p.damageTakenMult *= 1.25;
+      p.fireRate *= 1.25;
+      p.damageTakenMult *= 1.30;
     },
   },
   {
     id: 'glass_hull', name: 'Glass Hull', icon: '◇',
-    description: '+60% damage when shield is empty',
+    description: '+45% damage when shield is empty',
     rarity: 'rare',
     once: true,
     requires: (p) => p.maxShield > 0,
-    apply: (p) => { p.glassHull = true; },
+    apply: (p) => { p.glassHull = true; p.glassHullMult = 1.45; },
   },
   {
     id: 'frost_shot', name: 'Frost Rounds', icon: '❄',
-    description: 'Hits slow enemies for 1.5s',
+    description: 'Hits slow enemies for 1.2s',
     rarity: 'rare',
     once: true,
-    apply: (p) => { p.frostShot = true; },
+    apply: (p) => { p.frostShot = true; p.frostDuration = 1.2; },
   },
   {
     id: 'burn_shot', name: 'Burn Rounds', icon: '※',
-    description: 'Hits ignite for 5 dps over 2s (stacks)',
+    description: 'Hits ignite for 4 dps over 2s (stacks)',
     rarity: 'rare',
     apply: (p) => {
       if (p.burnDps === 0) p.burnDuration = 2.0;
-      p.burnDps += 5;
+      p.burnDps += 4;
     },
   },
   {
     id: 'combo_master', name: 'Combo Master', icon: '∞',
-    description: '+0.8% damage per combo (cap +40%)',
+    description: '+0.5% damage per combo (cap +25%)',
     rarity: 'rare',
-    apply: (p) => { p.comboMaster += 0.008; },
+    apply: (p) => { p.comboMaster += 0.005; },
   },
   {
     id: 'multi_crit', name: 'Multi-Crit', icon: '✦✦',
-    description: 'When one bullet crits, all bullets that shot crit',
+    description: 'A volley either fully crits or fully doesn\'t',
     rarity: 'rare',
     once: true,
     apply: (p) => { p.multiCrit = true; },
   },
   {
     id: 'charged', name: 'Charged Shot', icon: '◆',
-    description: 'Every 5th shot deals +120% damage',
+    description: 'Every 5th shot deals +85% damage',
     rarity: 'rare',
     once: true,
     apply: (p) => { p.chargedShot = true; },
   },
   {
     id: 'riposte', name: 'Riposte', icon: '↺',
-    description: 'After taking a hit, next 5 shots +75% dmg',
+    description: 'After taking a hit, next 5 shots +50% dmg',
     rarity: 'rare',
     once: true,
     apply: (p) => { p.riposte = true; },
@@ -286,81 +286,81 @@ const UPGRADES = [
   // =============================================================
   {
     id: 'twin_cannon', name: 'Twin Cannon', icon: '⫸',
-    description: '+1 multishot AND +1 spread',
+    description: '+1 multishot, +1 spread (−18% per-bullet dmg)',
     rarity: 'rare',
     once: true,
     requires: (p) => p.bossesDefeated >= 1,
-    apply: (p) => { p.multishot += 1; p.spread += 1; p.damage *= 0.88; },
+    apply: (p) => { p.multishot += 1; p.spread += 1; p.damage *= 0.82; },
   },
   {
     id: 'volatile', name: 'Volatile Rounds', icon: '⊛',
-    description: 'Hits splash 1 nearby enemy (55% dmg)',
+    description: 'Hits splash 1 nearby enemy (45% dmg)',
     rarity: 'rare',
     requires: (p) => p.bossesDefeated >= 1,
     apply: (p) => { p.splashChain += 1; },
   },
   {
     id: 'chrono', name: 'Chrono Field', icon: '◷',
-    description: 'All enemies move 12% slower',
+    description: 'All enemies move 8% slower',
     rarity: 'rare',
     requires: (p) => p.bossesDefeated >= 1,
-    apply: (p) => { p.chronoField = Math.min(0.35, p.chronoField + 0.12); },
+    apply: (p) => { p.chronoField = Math.min(0.30, p.chronoField + 0.08); },
   },
 
   // =============================================================
-  // EPIC  — rare game-changers, mostly one-time
+  // EPIC  — rare, build-defining one-time effects
   // =============================================================
   {
     id: 'devastation', name: 'Devastation', icon: '★',
-    description: '+0.4× crit damage multiplier',
+    description: '+0.3× crit damage multiplier',
     rarity: 'epic',
-    apply: (p) => { p.critMult += 0.4; },
+    apply: (p) => { p.critMult += 0.3; },
   },
   {
     id: 'steady_sights', name: 'Steady Sights', icon: '◎',
-    description: '+8% crit chance and +0.25× crit dmg',
+    description: '+5% crit chance and +0.18× crit dmg',
     rarity: 'epic',
-    apply: (p) => { p.critChance += 0.08; p.critMult += 0.25; },
+    apply: (p) => { p.critChance += 0.05; p.critMult += 0.18; },
   },
   {
     id: 'damage_mastery', name: 'Damage Mastery', icon: '✚⚔',
-    description: '+50% damage',
+    description: '+30% damage',
     rarity: 'epic',
     once: true,
-    apply: (p) => { p.damage *= 1.5; },
+    apply: (p) => { p.damage *= 1.30; },
   },
   {
     id: 'doppler', name: 'Doppler Drive', icon: '⫷⫸',
-    description: 'Bullets clone on first hit (50% dmg)',
+    description: 'Bullets clone on first hit (35% dmg)',
     rarity: 'epic',
     once: true,
-    apply: (p) => { p.doppler = true; },
+    apply: (p) => { p.doppler = true; p.dopplerMult = 0.35; },
   },
   {
     id: 'eclipse', name: 'Eclipse Burst', icon: '◐',
-    description: 'Every 12s — 3s of 2× fire rate',
+    description: 'Every 14s — 2.5s of 1.7× fire rate',
     rarity: 'epic',
     once: true,
-    apply: (p) => { p.eclipseBurst = true; p.eclipseTimer = 12; },
+    apply: (p) => { p.eclipseBurst = true; p.eclipseTimer = 14; },
   },
   {
     id: 'final_stand', name: 'Final Stand', icon: '✶',
-    description: 'Below 20% HP: +70% dmg dealt, −50% dmg taken',
+    description: 'Below 20% HP: +50% dmg dealt, −35% dmg taken',
     rarity: 'epic',
     once: true,
     apply: (p) => { p.finalStand = true; },
   },
   {
     id: 'apex', name: 'Apex Predator', icon: '✪',
-    description: '+25% damage, +1 multishot',
+    description: '+15% damage, +1 multishot (−10% per-bullet)',
     rarity: 'epic',
     once: true,
     requires: (p) => p.bossesDefeated >= 2,
-    apply: (p) => { p.damage *= 1.25; p.multishot += 1; },
+    apply: (p) => { p.damage *= 1.15 * 0.9; p.multishot += 1; },
   },
   {
     id: 'phoenix', name: 'Phoenix', icon: '♁',
-    description: 'Revive once at 50% HP on death',
+    description: 'Revive once at 40% HP on death',
     rarity: 'epic',
     once: true,
     requires: (p) => p.bossesDefeated >= 1,
@@ -368,20 +368,73 @@ const UPGRADES = [
   },
   {
     id: 'spread_mastery', name: 'Spread Mastery', icon: '※※',
-    description: '+3 spread bullets',
+    description: '+2 spread bullets (−15% per-bullet)',
     rarity: 'epic',
     once: true,
     requires: (p) => p.bossesDefeated >= 2,
-    apply: (p) => { p.spread += 3; p.damage *= 0.85; },
+    apply: (p) => { p.spread += 2; p.damage *= 0.85; },
+  },
+
+  // =============================================================
+  // LEGENDARY  — extremely rare, run-defining (mostly boss-locked)
+  // =============================================================
+  {
+    id: 'bullet_storm', name: 'Bullet Storm', icon: '☄',
+    description: '+25% damage AND +20% fire rate',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 1,
+    apply: (p) => { p.damage *= 1.25; p.fireRate *= 1.20; },
+  },
+  {
+    id: 'iron_skin', name: 'Iron Skin', icon: '⛊',
+    description: '−25% all damage taken (one-time)',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 1,
+    apply: (p) => { p.damageTakenMult *= 0.75; },
+  },
+  {
+    id: 'time_eternal', name: 'Time Eternal', icon: '⧖',
+    description: '+15% global slow on all enemies',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 2,
+    apply: (p) => { p.chronoField = Math.min(0.45, (p.chronoField || 0) + 0.15); },
+  },
+  {
+    id: 'reincarnation', name: 'Reincarnation', icon: '♁♁',
+    description: 'Two more Phoenix revives',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 2 && p.phoenix,
+    apply: (p) => { p.phoenixCharges = (p.phoenixCharges || 0) + 2; },
+  },
+  {
+    id: 'overcharge', name: 'Overcharge Core', icon: '⚡⚡',
+    description: 'Crit chance +12%, +0.4× crit dmg',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 1,
+    apply: (p) => { p.critChance += 0.12; p.critMult += 0.4; },
+  },
+  {
+    id: 'singularity', name: 'Singularity', icon: '◉',
+    description: '+2 multishot (no damage penalty)',
+    rarity: 'legendary',
+    once: true,
+    requires: (p) => p.bossesDefeated >= 3,
+    apply: (p) => { p.multishot += 2; },
   },
 ];
 
-const RARITY_WEIGHTS = { common: 100, uncommon: 50, rare: 18, epic: 4 };
+const RARITY_WEIGHTS = { common: 100, uncommon: 45, rare: 14, epic: 3.5, legendary: 0.8 };
 const RARITY_COLORS = {
   common: '#88aaee',
   uncommon: '#44ddff',
   rare: '#ff66dd',
   epic: '#ffaa00',
+  legendary: '#ff3344',
 };
 
 function rollUpgrades(player, count) {
@@ -395,8 +448,8 @@ function rollUpgrades(player, count) {
   const luck = player.luck || 0;
   const weights = pool.map(u => {
     let w = RARITY_WEIGHTS[u.rarity] || 30;
-    // Lucky Charm: boost rare/epic weights significantly, uncommon mildly
-    if (u.rarity === 'epic') w *= (1 + luck * 6);
+    if (u.rarity === 'legendary') w *= (1 + luck * 8);
+    else if (u.rarity === 'epic') w *= (1 + luck * 6);
     else if (u.rarity === 'rare') w *= (1 + luck * 4);
     else if (u.rarity === 'uncommon') w *= (1 + luck * 1.5);
     return w;

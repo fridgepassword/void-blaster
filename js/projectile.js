@@ -151,15 +151,30 @@ class EnemyBullet {
     this.y = y;
     this.vx = Math.cos(ang) * speed;
     this.vy = Math.sin(ang) * speed;
+    this.speed = speed;
     this.damage = damage;
     this.size = 6;
     this.color = color;
     this.life = 4.5;
     this.dead = false;
     this.spin = 0;
+    this.homing = 0;     // turn-rate (radians/sec) for tracking missiles
+    this.pierce = 0;     // for sniper rails — survive after hitting player
   }
 
-  update(dt, w, h) {
+  update(dt, w, h, player) {
+    // Optional homing toward the player
+    if (this.homing > 0 && player) {
+      const target = Math.atan2(player.y - this.y, player.x - this.x);
+      const cur = Math.atan2(this.vy, this.vx);
+      let diff = target - cur;
+      while (diff > Math.PI) diff -= TAU;
+      while (diff < -Math.PI) diff += TAU;
+      const turn = clamp(diff, -this.homing * dt, this.homing * dt);
+      const newAng = cur + turn;
+      this.vx = Math.cos(newAng) * this.speed;
+      this.vy = Math.sin(newAng) * this.speed;
+    }
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     this.spin += dt * 6;

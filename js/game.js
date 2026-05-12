@@ -199,16 +199,30 @@ function endWave() {
 }
 
 function gameOver() {
-  // Phoenix — one revive per run
+  // Phoenix — at least 1 revive if owned, plus any extra Reincarnation charges
   if (player && player.phoenix && !player.phoenixUsed) {
     player.phoenixUsed = true;
-    player.hp = Math.max(1, player.maxHp * 0.5);
+    // Pre-load Reincarnation charges into a counter
+    if (player.phoenixCharges === undefined) player.phoenixCharges = 0;
+    player.hp = Math.max(1, player.maxHp * 0.4);
     player.invincible = 2.5;
     flash(255, 200, 80, 0.6, 1.5);
     shake(20, 0.5);
     explosion(player.x, player.y, '#ffaa44', 60, 450, 0.9);
     explosion(player.x, player.y, '#ffffff', 30, 250, 0.5);
     addFloatingText(player.x, player.y - 30, 'PHOENIX!', '#ffaa44', 28);
+    sfxUpgrade();
+    return;
+  }
+  // Additional revives from Reincarnation legendary
+  if (player && player.phoenixCharges > 0) {
+    player.phoenixCharges--;
+    player.hp = Math.max(1, player.maxHp * 0.4);
+    player.invincible = 2.5;
+    flash(255, 200, 80, 0.6, 1.5);
+    shake(20, 0.5);
+    explosion(player.x, player.y, '#ffaa44', 60, 450, 0.9);
+    addFloatingText(player.x, player.y - 30, `REINCARNATION (${player.phoenixCharges} left)`, '#ff3344', 22);
     sfxUpgrade();
     return;
   }
@@ -365,9 +379,11 @@ function updatePlaying(dt) {
     if (waveSpec.length > 0 && waveSpawnTimer <= 0) {
       const next = waveSpec.shift();
       enemies.push(spawnEnemyFromSpec(next, W, H, wave, window.__getDifficulty()));
-      // Spawn cadence: tighter for swarmers, wider for big enemies
+      // Spawn cadence: tighter for swarmers, wider for big/dangerous enemies
       if (next.type === 'swarmer') waveSpawnTimer = rand(0.2, 0.45);
-      else if (next.type === 'tank' || next.type === 'bomber') waveSpawnTimer = rand(0.7, 1.1);
+      else if (next.type === 'tank' || next.type === 'sentinel') waveSpawnTimer = rand(0.8, 1.2);
+      else if (next.type === 'bomber' || next.type === 'sniper') waveSpawnTimer = rand(0.7, 1.0);
+      else if (next.type === 'healer') waveSpawnTimer = rand(0.6, 0.9);
       else if (next.type === 'boss') waveSpawnTimer = 1.4;
       else waveSpawnTimer = rand(0.4, 0.8);
     }
@@ -388,10 +404,14 @@ function updatePlaying(dt) {
   // Enemy bullets — collide with player
   for (let i = enemyBullets.length - 1; i >= 0; i--) {
     const b = enemyBullets[i];
-    b.update(dt, W, H);
+    b.update(dt, W, H, player);
     if (!b.dead && distSq(b.x, b.y, player.x, player.y) < (b.size + player.radius - 2) ** 2) {
       player.takeDamage(b.damage);
-      b.dead = true;
+      if (b.pierce > 0) {
+        b.pierce--;       // sniper rail keeps going
+      } else {
+        b.dead = true;
+      }
       spark(b.x, b.y, b.color, 8, 200);
     }
     if (b.dead) enemyBullets.splice(i, 1);
@@ -413,21 +433,22 @@ function updatePlaying(dt) {
           player.totalHits++;
 
           // Status effects from upgrades
-          if (b.frost) e.applyFrost(1.5);
+          if (b.frost) e.applyFrost(player.frostDuration || 1.2);
           if (b.burnDps > 0) e.applyBurn(b.burnDps, b.burnDuration);
 
-          // Doppler — first hit spawns 2 perpendicular clone bullets at half damage
+          // Doppler — first hit spawns 2 perpendicular clone bullets at reduced damage
           if (b.doppler && !b.dopplerSpawned) {
             b.dopplerSpawned = true;
             const baseAng = Math.atan2(b.vy, b.vx);
             const speed = Math.hypot(b.vx, b.vy);
+            const mult = (player && player.dopplerMult) || 0.35;
             for (const s of [-1, 1]) {
               bullets.push(new Bullet(
                 b.x, b.y,
                 baseAng + s * Math.PI / 2,
                 speed,
-                b.damage * 0.5,
-                { size: b.size * 0.8, pierce: 0, isCrit: b.isCrit, life: 0.9 }
+                b.damage * mult,
+                { size: b.size * 0.7, pierce: 0, isCrit: b.isCrit, life: 0.9 }
               ));
             }
             spark(b.x, b.y, '#ff66ff', 6, 200);
@@ -490,12 +511,12 @@ function updatePlaying(dt) {
       if (player.killHeal > 0) {
         player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.killHeal);
       }
-      // Endurance — heal every 8 kills per stack
+      // Endurance — heal every 10 kills per stack
       if (player.endurance > 0) {
         player.enduranceCount++;
-        if (player.enduranceCount >= 8) {
+        if (player.enduranceCount >= 10) {
           player.enduranceCount = 0;
-          const heal = 6 * player.endurance;
+          const heal = 4 * player.endurance;
           player.hp = Math.min(player.maxHp, player.hp + heal);
           addFloatingText(player.x, player.y - 24, `+${heal}♥`, '#88ff88', 14);
         }

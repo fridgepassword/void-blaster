@@ -53,8 +53,10 @@ class Player {
 
     // Stand-still penalty — discourages camping
     this.stillTimer = 0;
-    this.stillThreshold = 1.5;     // seconds before exposed
-    this.stillDamageMult = 2.0;    // damage multiplier when exposed
+    this.stillThreshold = 1.5;     // seconds before exposed (2× incoming damage)
+    this.stillDamageMult = 2.0;
+    this.drainThreshold = 4.0;     // seconds before HP drain kicks in
+    this.drainRate = 5;            // HP per second once draining
 
     // Progression / meta
     this.bossesDefeated = 0;
@@ -149,6 +151,28 @@ class Player {
       this.stillTimer += dt;
     }
 
+    // Stand-still HP drain — at 4+ seconds without moving, bleed 5 HP/sec.
+    // Skipped during i-frames and when behind a shield.
+    if (this.stillTimer >= this.drainThreshold && this.invincible <= 0 && this.shield <= 0) {
+      this.hp -= this.drainRate * dt;
+      if (this.hp < 0) this.hp = 0;
+      // Damage particles bleeding off the ship
+      if (Math.random() < dt * 8) {
+        addParticle(
+          this.x + rand(-this.radius * 0.7, this.radius * 0.7),
+          this.y + rand(-this.radius * 0.4, this.radius * 0.4),
+          {
+            vx: rand(-20, 20),
+            vy: rand(-90, -40),
+            color: rand() < 0.5 ? '#ff4444' : '#ff8866',
+            life: rand(0.3, 0.55),
+            size: rand(2, 4),
+            drag: 4,
+          }
+        );
+      }
+    }
+
     // Dash — only meaningful in WASD mode (Shift)
     if (this.canDash && this.dashCooldown <= 0 && len > 0 &&
         wasKeyPressed('ShiftLeft', 'ShiftRight', 'shift')) {
@@ -219,20 +243,20 @@ class Player {
       }
     }
 
-    // Eclipse Burst — periodic fire-rate burst
+    // Eclipse Burst — periodic fire-rate burst (1.7x for 2.5s every 14s)
     if (this.eclipseBurst) {
       if (this.eclipseActive > 0) {
         this.eclipseActive -= dt;
       } else {
         this.eclipseTimer -= dt;
         if (this.eclipseTimer <= 0) {
-          this.eclipseActive = 3;
-          this.eclipseTimer = 12;
+          this.eclipseActive = 2.5;
+          this.eclipseTimer = 14;
           flash(255, 200, 100, 0.2, 2);
-          for (let i = 0; i < 16; i++) {
+          for (let i = 0; i < 14; i++) {
             const a = rand(0, TAU);
             addParticle(this.x, this.y, {
-              vx: Math.cos(a) * 220, vy: Math.sin(a) * 220,
+              vx: Math.cos(a) * 200, vy: Math.sin(a) * 200,
               color: '#ffaa00', life: 0.45, size: rand(2, 4), drag: 4,
             });
           }
@@ -245,8 +269,8 @@ class Player {
       if (this._hasTarget()) {
         this.shoot(bullets);
         let fr = this.fireRate;
-        if (this.adrenaline && this.hp < this.maxHp * 0.3) fr *= 1.3;
-        if (this.eclipseActive > 0) fr *= 2.0;
+        if (this.adrenaline && this.hp < this.maxHp * 0.3) fr *= 1.22;
+        if (this.eclipseActive > 0) fr *= 1.7;
         this.fireTimer = 1 / fr;
       } else {
         this.fireTimer = 0.2;
@@ -320,15 +344,15 @@ class Player {
     // Compute damage with conditional modifiers
     let dmg = this.damage;
     if (this.moversEdge > 0 && this.isMoving) dmg *= 1 + this.moversEdge;
-    if (this.glassHull && this.maxShield > 0 && this.shield === 0) dmg *= 1.6;
-    if (this.glassHull && this.maxShield === 0) dmg *= 1.25;
+    if (this.glassHull && this.maxShield > 0 && this.shield === 0) dmg *= 1.45;
+    if (this.glassHull && this.maxShield === 0) dmg *= 1.18;
     if (this.comboMaster > 0 && typeof combo !== 'undefined') {
-      dmg *= 1 + Math.min(0.4, combo * this.comboMaster);
+      dmg *= 1 + Math.min(0.25, combo * this.comboMaster);
     }
-    if (opts.isFirstOfVolley) dmg *= 1.4;          // Steady Aim
-    if (opts.isCharged) dmg *= 2.2;                // Charged Shot
-    if (this.riposteShots > 0) dmg *= 1.75;        // Riposte buff window
-    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 1.7;
+    if (opts.isFirstOfVolley) dmg *= 1.25;         // Steady Aim
+    if (opts.isCharged) dmg *= 1.85;               // Charged Shot
+    if (this.riposteShots > 0) dmg *= 1.5;         // Riposte buff window
+    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 1.5;
     if (isCrit) dmg *= this.critMult;
 
     bullets.push(new Bullet(
@@ -382,7 +406,7 @@ class Player {
     let dmg = amount * this.damageTakenMult;
     if (exposed) dmg *= this.stillDamageMult;
     // Final Stand — damage reduction at very low HP
-    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 0.5;
+    if (this.finalStand && this.hp < this.maxHp * 0.2) dmg *= 0.65;
     const diff = window.__getDifficulty && window.__getDifficulty();
     if (diff && diff.playerDmgTakenMult) dmg *= diff.playerDmgTakenMult;
 
@@ -458,26 +482,43 @@ class Player {
 
     ctx.restore();
 
-    // Stand-still warning ring — pulses yellow then red as the timer fills
+    // Stand-still warning — escalates from a yellow tick to red EXPOSED to red DRAINING
     if (this.stillTimer > this.stillThreshold * 0.5) {
       const t = clamp(this.stillTimer / this.stillThreshold, 0, 1);
-      const exposed = t >= 1;
-      const pulse = (Math.sin(performance.now() / (exposed ? 90 : 160)) + 1) * 0.5;
-      const alpha = exposed ? 0.55 + pulse * 0.4 : 0.25 + t * 0.4;
-      const radius = this.radius * (1.9 + (exposed ? pulse * 0.25 : 0));
+      const exposed = this.stillTimer >= this.stillThreshold;
+      const draining = this.stillTimer >= this.drainThreshold;
+      const pulseSpeed = draining ? 60 : (exposed ? 90 : 160);
+      const pulse = (Math.sin(performance.now() / pulseSpeed) + 1) * 0.5;
+      const alpha = draining ? 0.75 + pulse * 0.25
+                   : exposed ? 0.55 + pulse * 0.4
+                   : 0.25 + t * 0.4;
+      const radius = this.radius * (1.9 + (draining ? pulse * 0.5 : exposed ? pulse * 0.25 : 0));
       ctx.save();
-      ctx.shadowBlur = exposed ? 18 : 10;
-      ctx.shadowColor = exposed ? '#ff3333' : '#ffaa44';
-      ctx.strokeStyle = exposed
-        ? `rgba(255, 60, 60, ${alpha})`
-        : `rgba(255, 180, 60, ${alpha})`;
-      ctx.lineWidth = exposed ? 2.5 : 1.5;
-      ctx.setLineDash(exposed ? [] : [6, 4]);
+      ctx.shadowBlur = draining ? 26 : (exposed ? 18 : 10);
+      ctx.shadowColor = draining ? '#ff2222' : (exposed ? '#ff3333' : '#ffaa44');
+      ctx.strokeStyle = draining
+        ? `rgba(255, 40, 40, ${alpha})`
+        : exposed
+          ? `rgba(255, 60, 60, ${alpha})`
+          : `rgba(255, 180, 60, ${alpha})`;
+      ctx.lineWidth = draining ? 3.5 : exposed ? 2.5 : 1.5;
+      ctx.setLineDash(exposed || draining ? [] : [6, 4]);
       ctx.beginPath();
       ctx.arc(this.x, this.y, radius, 0, TAU);
       ctx.stroke();
+      // Second inner ring on full drain
+      if (draining) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, radius * 0.7, 0, TAU);
+        ctx.stroke();
+      }
       ctx.setLineDash([]);
-      if (exposed) {
+      if (draining) {
+        ctx.fillStyle = `rgba(255, 60, 60, ${0.8 + pulse * 0.2})`;
+        ctx.font = 'bold 12px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('DRAINING', this.x, this.y - radius - 8);
+      } else if (exposed) {
         ctx.fillStyle = `rgba(255, 80, 80, ${0.6 + pulse * 0.3})`;
         ctx.font = 'bold 11px "Courier New", monospace';
         ctx.textAlign = 'center';

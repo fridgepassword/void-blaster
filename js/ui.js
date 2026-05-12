@@ -207,7 +207,7 @@ function drawTitleScreen(ctx, w, h, time) {
   const lineY = h * 0.9;
   ctx.fillText('SHIFT — DASH (after upgrade)     ·     P / ESC — PAUSE     ·     M — MUTE', w / 2, lineY);
   ctx.fillStyle = '#cc7755';
-  ctx.fillText('KEEP MOVING — STANDING STILL FOR 1.5s MAKES YOU TAKE 2× DAMAGE', w / 2, lineY + 16);
+  ctx.fillText('KEEP MOVING — IDLE 1.5s = 2× DAMAGE TAKEN   ·   IDLE 4s = −5 HP/s', w / 2, lineY + 16);
 
   // High score badge
   if (window.__highScore && window.__highScore > 0) {
