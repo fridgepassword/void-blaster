@@ -152,12 +152,20 @@ class Player {
     }
 
     // Stand-still HP drain — at 4+ seconds without moving, bleed 5 HP/sec.
-    // Skipped during i-frames and when behind a shield.
-    if (this.stillTimer >= this.drainThreshold && this.invincible <= 0 && this.shield <= 0) {
+    // Bypasses shield AND i-frames — this is a "move or die" penalty, not regular damage.
+    const draining = this.stillTimer >= this.drainThreshold;
+    if (draining) {
       this.hp -= this.drainRate * dt;
       if (this.hp < 0) this.hp = 0;
-      // Damage particles bleeding off the ship
-      if (Math.random() < dt * 8) {
+      // Once-per-second damage popup so you can see it happening
+      this._drainPopupT = (this._drainPopupT || 0) + dt;
+      if (this._drainPopupT >= 1) {
+        this._drainPopupT -= 1;
+        addFloatingText(this.x, this.y - this.radius - 12, `-${this.drainRate}`, '#ff3344', 18);
+        shake(3, 0.12);
+      }
+      // Dripping damage particles
+      if (Math.random() < dt * 10) {
         addParticle(
           this.x + rand(-this.radius * 0.7, this.radius * 0.7),
           this.y + rand(-this.radius * 0.4, this.radius * 0.4),
@@ -171,6 +179,8 @@ class Player {
           }
         );
       }
+    } else {
+      this._drainPopupT = 0;
     }
 
     // Dash — only meaningful in WASD mode (Shift)
@@ -214,8 +224,9 @@ class Player {
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
     if (this.invincible > 0) this.invincible -= dt;
 
-    // Regen
-    if (this.regenRate > 0 && this.hp < this.maxHp) {
+    // Regen — suppressed while the stand-still drain is active (the whole point of the penalty)
+    const isDraining = this.stillTimer >= this.drainThreshold;
+    if (this.regenRate > 0 && this.hp < this.maxHp && !isDraining) {
       this.hp = Math.min(this.maxHp, this.hp + this.regenRate * dt);
     }
 
